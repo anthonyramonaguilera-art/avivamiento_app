@@ -1,0 +1,7 @@
+-Utiliza por defecto flutter
+-Usa firebase gratuito
+-Haz uso de buenas practicas
+-documenta cada linea que sea necesaria para que cualquier persona pueda entender su funcion en el proyecto
+-Refactoriza el codigo siempre que se pueda 
+-Toda funcionalidad tiene que estar pensada en la escalabilidad 
+-Crea test de las funcionalidades principales
