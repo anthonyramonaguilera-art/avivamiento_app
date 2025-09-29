@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1004105871009",
+    "project_id": "avivamiento-app-ef433",
+    "storage_bucket": "avivamiento-app-ef433.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1004105871009:android:5189aa58c009d9d081cae0",
+        "android_client_info": {
+          "package_name": "com.example.avivamiento_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1hcGuCIPZhyzoCDm8cusdMV2pDEBMjAs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
