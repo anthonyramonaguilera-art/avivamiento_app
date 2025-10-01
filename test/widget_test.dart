@@ -7,13 +7,38 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:avivamiento_app/main.dart';
+import 'package:avivamiento_app/providers/services_provider.dart';
+import 'package:avivamiento_app/services/auth_service.dart';
+import 'package:avivamiento_app/services/user_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class MockAuthService extends Mock implements AuthService {}
+
+class MockUserService extends Mock implements UserService {}
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    final mockAuthService = MockAuthService();
+    final mockUserService = MockUserService();
+    // Devuelve un stream vacío del tipo correcto para authStateChanges
+    when(
+      mockAuthService.authStateChanges,
+    ).thenAnswer((_) => Stream<User?>.empty());
+
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authServiceProvider.overrideWithValue(mockAuthService),
+          userServiceProvider.overrideWithValue(mockUserService),
+        ],
+        child: const MyApp(),
+      ),
+    );
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

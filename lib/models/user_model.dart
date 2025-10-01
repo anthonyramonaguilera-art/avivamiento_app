@@ -1,20 +1,20 @@
 // lib/models/user_model.dart
 
-// Importamos cloud_firestore para poder usar el tipo Timestamp.
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Modelo para representar los datos de un usuario.
-/// Cada propiedad corresponde a un campo en la colección 'users' de Firestore.
+/// Representa el modelo de datos para un usuario en la aplicación.
+///
+/// Cada instancia de esta clase corresponde a un documento en la colección 'users' de Firestore.
+/// Está diseñado para ser inmutable, promoviendo un estado predecible.
 class UserModel {
-  final String
-  id; // ID único del documento (coincide con el UID de Firebase Auth).
+  /// El ID único del documento de Firestore, que debe coincidir con el UID de Firebase Auth.
+  final String id;
   final String nombre;
   final String email;
   final String rol;
-  final String? fotoUrl; // La URL de la foto puede ser nula.
+  final String? fotoUrl;
   final Timestamp fechaRegistro;
 
-  // Constructor de la clase.
   UserModel({
     required this.id,
     required this.nombre,
@@ -24,23 +24,25 @@ class UserModel {
     required this.fechaRegistro,
   });
 
-  /// Factory constructor para crear una instancia de UserModel desde un mapa (documento de Firestore).
-  /// Esto es crucial para convertir los datos crudos de la base deatos en un objeto Dart.
+  /// Crea una instancia de [UserModel] a partir de un mapa de datos de Firestore.
+  ///
+  /// Este factory constructor es crucial para deserializar los datos leídos de la base de datos.
+  /// Proporciona valores por defecto para campos que podrían ser nulos.
   factory UserModel.fromMap(Map<String, dynamic> data, String documentId) {
     return UserModel(
       id: documentId,
-      nombre:
-          data['nombre'] ??
-          '', // Usamos '??' para proveer un valor por defecto si el campo es nulo.
+      nombre: data['nombre'] ?? '',
       email: data['email'] ?? '',
-      rol: data['rol'] ?? 'Invitado', // Por defecto, el rol es 'Invitado'.
+      rol: data['rol'] ?? 'Invitado', // El rol por defecto es 'Invitado'.
       fotoUrl: data['fotoUrl'],
       fechaRegistro: data['fechaRegistro'] ?? Timestamp.now(),
     );
   }
 
-  /// Método para convertir una instancia de UserModel a un mapa.
-  /// Esto es necesario para escribir o actualizar datos en Firestore.
+  /// Convierte la instancia de [UserModel] a un mapa para ser almacenado en Firestore.
+  ///
+  /// Este método es esencial para serializar el objeto Dart antes de escribirlo
+  /// en la base de datos.
   Map<String, dynamic> toMap() {
     return {
       'nombre': nombre,

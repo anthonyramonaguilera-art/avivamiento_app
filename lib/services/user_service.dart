@@ -1,39 +1,40 @@
+// lib/services/user_service.dart
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:avivamiento_app/models/user_model.dart'; // Importa tu UserModel
+import 'package:avivamiento_app/models/user_model.dart';
 
-/// Servicio para interactuar con los datos de usuario en Firestore.
 class UserService {
-  final FirebaseFirestore _firestore; // Instancia de Firestore
-  final CollectionReference
-  _usersCollection; // Referencia a la colección 'users'
+  final FirebaseFirestore _firestore;
+  // Colección de usuarios. Es una buena práctica definirla una vez.
+  late final CollectionReference<Map<String, dynamic>> _usersCollection;
 
-  UserService(this._firestore)
-    : _usersCollection = _firestore.collection('users');
-
-  /// Crea un nuevo perfil de usuario en Firestore.
-  /// Toma un UserModel y guarda sus datos.
-  Future<void> createUserProfile(UserModel user) async {
-    await _usersCollection.doc(user.id).set(user.toMap());
+  UserService(this._firestore) {
+    _usersCollection = _firestore.collection('users');
   }
 
-  /// Obtiene un perfil de usuario de Firestore por su ID.
-  /// Devuelve el UserModel si existe, o null si no.
-  Future<UserModel?> getUserProfile(String userId) async {
-    final doc = await _usersCollection.doc(userId).get();
-    if (doc.exists && doc.data() != null) {
-      return UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+  // ... (método createUserProfile existente)
+
+  /// Obtiene el perfil de un usuario como un Future (una sola vez).
+  Future<UserModel?> getUserProfile(String uid) async {
+    final docSnapshot = await _usersCollection.doc(uid).get();
+    if (docSnapshot.exists) {
+      return UserModel.fromMap(docSnapshot.data()!, docSnapshot.id);
     }
     return null;
   }
 
-  /// Actualiza un perfil de usuario existente en Firestore.
-  /// Solo actualiza los campos proporcionados.
-  Future<void> updateUserProfile(
-    String userId,
-    Map<String, dynamic> data,
-  ) async {
-    await _usersCollection.doc(userId).update(data);
+  /// **[NUEVO]** Obtiene el perfil de un usuario como un Stream (en tiempo real).
+  ///
+  /// Esto nos permite escuchar cambios en el documento del usuario y actualizar
+  /// la UI automáticamente. Es ideal para la pantalla de perfil.
+  Stream<UserModel?> getUserProfileStream(String uid) {
+    return _usersCollection.doc(uid).snapshots().map((snapshot) {
+      if (snapshot.exists) {
+        // Si el documento existe, lo mapeamos a nuestro UserModel.
+        return UserModel.fromMap(snapshot.data()!, snapshot.id);
+      }
+      // Si no existe, emitimos null en el stream.
+      return null;
+    });
   }
-
-  // Puedes añadir más métodos aquí, como eliminar usuario, etc.
 }

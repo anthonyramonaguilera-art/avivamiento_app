@@ -1,7 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Nuevo: Importa Firestore
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:avivamiento_app/services/post_service.dart';
+import 'package:avivamiento_app/services/event_service.dart';
+import 'package:avivamiento_app/models/post_model.dart';
+import 'package:avivamiento_app/models/event_model.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart'; // Nuevo: Importa UserService
 
@@ -32,3 +35,31 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
 });
 
 // Puedes añadir más providers aquí en el futuro.
+
+/// Proveedor para el servicio de gestión de publicaciones.
+
+/// Proveedor para el servicio de gestión de publicaciones.
+final postServiceProvider = Provider<PostService>((ref) {
+  return PostService(ref.watch(firebaseFirestoreProvider));
+});
+
+/// [NUEVO] Proveedor para el servicio de gestión de eventos.
+
+/// Proveedor para el servicio de gestión de eventos.
+final eventServiceProvider = Provider<EventService>((ref) {
+  return EventService(ref.watch(firebaseFirestoreProvider));
+});
+
+/// Un StreamProvider que expone la lista de publicaciones.
+
+/// Un StreamProvider que expone la lista de publicaciones.
+final postsProvider = StreamProvider<List<PostModel>>((ref) {
+  final postService = ref.watch(postServiceProvider);
+  return postService.getPostsStream();
+});
+
+/// [NUEVO] Un StreamProvider que expone la lista de eventos en tiempo real.
+final eventsProvider = StreamProvider<List<EventModel>>((ref) {
+  final eventService = ref.watch(eventServiceProvider);
+  return eventService.getEventsStream();
+});

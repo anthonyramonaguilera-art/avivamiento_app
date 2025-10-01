@@ -35,7 +35,7 @@ dependencies:
   firebase_auth: ^4.17.4
   cloud_firestore: ^4.15.4
   cupertino_icons: ^1.0.8
-
+  audioplayers: ^6.0.0 
   # Gestión de estado y servicios
   flutter_riverpod: ^2.4.9
 

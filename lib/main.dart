@@ -9,7 +9,7 @@ import 'package:avivamiento_app/screens/home_screen.dart';
 import 'package:avivamiento_app/screens/splash_screen.dart';
 
 // Importa el StreamProvider que escucha los cambios de autenticación
-import 'package:avivamiento_app/services/services_provider.dart';
+import 'package:avivamiento_app/providers/services_provider.dart';
 
 void main() async {
   // Asegura que los widgets de Flutter estén inicializados.
