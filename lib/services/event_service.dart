@@ -3,7 +3,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:avivamiento_app/models/event_model.dart';
 
-/// Servicio para manejar las operaciones de los eventos del calendario.
 class EventService {
   final FirebaseFirestore _firestore;
   late final CollectionReference<Map<String, dynamic>> _eventsCollection;
@@ -12,8 +11,6 @@ class EventService {
     _eventsCollection = _firestore.collection('events');
   }
 
-  /// Obtiene un Stream de la lista de eventos.
-  /// Se ordenan por fecha de inicio para mostrar los más próximos primero.
   Stream<List<EventModel>> getEventsStream() {
     return _eventsCollection
         .orderBy('startTime', descending: false)
@@ -23,5 +20,22 @@ class EventService {
             return EventModel.fromMap(doc.data(), doc.id);
           }).toList();
         });
+  }
+
+  /// **[NUEVO]** Crea un nuevo documento de evento en Firestore.
+  Future<void> createEvent({
+    required String title,
+    required String description,
+    required String location,
+    required Timestamp startTime,
+    required Timestamp endTime,
+  }) {
+    return _eventsCollection.add({
+      'title': title,
+      'description': description,
+      'location': location,
+      'startTime': startTime,
+      'endTime': endTime,
+    });
   }
 }
