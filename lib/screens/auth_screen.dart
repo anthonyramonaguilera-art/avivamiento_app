@@ -1,56 +1,55 @@
-// lib/screens/auth_screen.dart
+/// lib/screens/auth_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
+import 'package:avivamiento_app/screens/auth/login_screen.dart';
 
-// Usamos un StateProvider para manejar el estado de carga
-final isLoadingProvider = StateProvider<bool>((ref) => false);
-
+/// La pantalla inicial que el usuario ve si no está autenticado.
+/// Ofrece las opciones principales de autenticación.
 class AuthScreen extends ConsumerWidget {
   const AuthScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authService = ref.watch(authServiceProvider);
-    final isLoading = ref.watch(
-      isLoadingProvider,
-    ); // Observamos el estado de carga
+    final authService = ref.read(authServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bienvenido')),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Por favor, inicia sesión para continuar.',
-              style: TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 30),
-            if (isLoading)
-              const CircularProgressIndicator() // Mostramos el indicador si está cargando
-            else
-              ElevatedButton(
-                onPressed: () async {
-                  ref.read(isLoadingProvider.notifier).state =
-                      true; // Inicia la carga
-                  try {
-                    final uid = await authService.signInAnonymously();
-                    print('Usuario anónimo logeado con UID: $uid');
-                  } catch (e) {
-                    print('Error al iniciar sesión anónimamente: $e');
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                  } finally {
-                    ref.read(isLoadingProvider.notifier).state =
-                        false; // Finaliza la carga
-                  }
-                },
-                child: const Text('Iniciar Sesión Anónimamente'),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.church, size: 80, color: Colors.blue),
+              const SizedBox(height: 20),
+              const Text(
+                'Bienvenido a\nCentro Internacional Avivamiento',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-          ],
+              const SizedBox(height: 50),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Iniciar Sesión o Registrarse'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () async {
+                  // Mantenemos la lógica de invitado anónimo
+                  await authService.signInAnonymously();
+                },
+                child: const Text('Continuar como Invitado'),
+              ),
+            ],
+          ),
         ),
       ),
     );

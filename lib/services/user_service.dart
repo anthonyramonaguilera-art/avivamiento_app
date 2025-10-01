@@ -12,7 +12,19 @@ class UserService {
     _usersCollection = _firestore.collection('users');
   }
 
-  // ... (método createUserProfile existente)
+  /// Crea el perfil de un usuario en Firestore después del registro.
+  Future<void> createUserProfile({
+    required String uid,
+    required String nombre,
+    required String email,
+  }) async {
+    await _usersCollection.doc(uid).set({
+      'nombre': nombre,
+      'email': email,
+      'fechaRegistro': FieldValue.serverTimestamp(),
+      'rol': 'Miembro',
+    });
+  }
 
   /// Obtiene el perfil de un usuario como un Future (una sola vez).
   Future<UserModel?> getUserProfile(String uid) async {

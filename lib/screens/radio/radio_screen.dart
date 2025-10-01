@@ -14,7 +14,6 @@ final audioPlayerProvider = Provider<AudioPlayer>((ref) {
   return player;
 });
 
-
 class RadioScreen extends ConsumerWidget {
   const RadioScreen({super.key});
 
