@@ -38,6 +38,12 @@ dependencies:
   audioplayers: ^6.0.0 
   # Gestión de estado y servicios
   flutter_riverpod: ^2.4.9
+ # [NUEVO] Image Picker para seleccionar fotos de la galería o cámara
+  image_picker: ^1.1.2
+#imgbb
+  http: ^1.2.1
+  firebase_storage: ^11.7.7
+
 
 dev_dependencies:
   flutter_test:

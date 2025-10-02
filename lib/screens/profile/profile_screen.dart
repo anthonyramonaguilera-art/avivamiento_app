@@ -1,51 +1,111 @@
 // lib/screens/profile/profile_screen.dart
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:avivamiento_app/providers/user_data_provider.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
+import 'package:avivamiento_app/models/user_model.dart';
 
-/// La pantalla de perfil del usuario.
-///
-/// Utiliza un [ConsumerWidget] para poder escuchar los cambios de los proveedores de Riverpod.
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Escuchamos el proveedor del perfil de usuario.
-    // Riverpod nos devuelve un AsyncValue, que contiene el estado (data, loading, error).
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _isLoading = false;
+
+  Future<void> _pickAndUploadImage(UserModel user) async {
+    final imagePicker = ImagePicker();
+    final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _isLoading = true;
+      });
+      try {
+        final userService = ref.read(userServiceProvider);
+
+        // 1. [CAMBIO] Sube el 'pickedFile' (XFile) directamente a ImgBB
+        final downloadUrl = await userService.uploadProfilePictureToImgbb(
+          pickedFile,
+        );
+
+        // 2. Actualiza el perfil con la nueva URL
+        await userService.updateUserProfile(uid: user.id, fotoUrl: downloadUrl);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Foto de perfil actualizada con éxito')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al subir la imagen: $e')));
+      } finally {
+        if (mounted)
+          setState(() {
+            _isLoading = false;
+          });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userProfile = ref.watch(userProfileProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mi Perfil')),
-      // Usamos el método .when() de AsyncValue para construir la UI según el estado.
-      // Esto es una buena práctica para manejar estados asíncronos de forma limpia.
       body: userProfile.when(
-        // Estado de carga: mostramos un indicador de progreso.
         loading: () => const Center(child: CircularProgressIndicator()),
-        // Estado de error: mostramos un mensaje de error.
         error: (error, stackTrace) => Center(child: Text('Error: $error')),
-        // Estado de éxito: tenemos los datos y construimos la UI principal.
         data: (user) {
-          // Si por alguna razón el usuario es nulo (ej. se deslogueó), mostramos un mensaje.
           if (user == null) {
             return const Center(child: Text('Usuario no encontrado.'));
           }
 
-          // Construimos la vista del perfil con los datos del usuario.
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Círculo para la foto de perfil (placeholder por ahora).
-                const CircleAvatar(
-                  radius: 50,
-                  child: Icon(Icons.person, size: 50),
+                Center(
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 60,
+                        backgroundImage: user.fotoUrl != null
+                            ? NetworkImage(user.fotoUrl!)
+                            : null,
+                        child: user.fotoUrl == null
+                            ? const Icon(Icons.person, size: 60)
+                            : null,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Theme.of(context).primaryColor,
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            onPressed: () => _pickAndUploadImage(user),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
-                // Tarjeta con la información del usuario.
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator()),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -70,14 +130,12 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const Spacer(), // Ocupa el espacio restante.
-                // Botón para cerrar sesión.
+                const Spacer(),
                 ElevatedButton(
                   onPressed: () {
-                    // Accedemos al servicio de autenticación para cerrar sesión.
                     ref.read(authServiceProvider).signOut();
-                    // Volvemos a la pantalla anterior (o a la pantalla de login).
-                    Navigator.of(context).pop();
+                    // Cerramos la pantalla de perfil al salir
+                    if (Navigator.canPop(context)) Navigator.pop(context);
                   },
                   child: const Text('Cerrar Sesión'),
                 ),

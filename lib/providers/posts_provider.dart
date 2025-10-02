@@ -5,7 +5,7 @@ import 'package:avivamiento_app/providers/services_provider.dart';
 
 /// Proveedor que expone un Stream de la lista de publicaciones.
 final postsProvider = StreamProvider<List<PostModel>>((ref) {
-  final firestore = ref.watch(firebaseFirestoreProvider);
+  final firestore = ref.watch(firestoreProvider);
   final postService = PostService(firestore);
   return postService.getPostsStream();
 });
