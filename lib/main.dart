@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:avivamiento_app/firebase_options.dart';
 import 'package:avivamiento_app/screens/auth_screen.dart';
 import 'package:avivamiento_app/screens/home_screen.dart';
-import 'package:avivamiento_app/screens/splash_screen.dart';
-import 'package:avivamiento_app/providers/services_provider.dart'; // Asegúrate de que este import sea el correcto
+import 'package:avivamiento_app/screens/splash_screen.dart'; // Asegúrate de que este import sea el correcto
+import 'package:avivamiento_app/providers/auth_provider.dart';
 
 void main() async {
   // Asegura que Flutter esté inicializado antes de usar plugins.

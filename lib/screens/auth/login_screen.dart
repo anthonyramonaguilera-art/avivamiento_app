@@ -1,4 +1,5 @@
 // lib/screens/auth/login_screen.dart
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,8 +19,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _login() async {
-    if (_formKey.currentState!.validate()) {
+    // Valida que el formulario tenga datos correctos
+    if (_formKey.currentState?.validate() ?? false) {
       setState(() {
         _isLoading = true;
       });
@@ -29,12 +38,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        // Si el login es exitoso, el `StreamBuilder` en `main.dart` nos llevará a `HomeScreen`.
+
+        // [CORRECCIÓN] Si el login es exitoso, cerramos esta pantalla
+        // para revelar la HomeScreen que está detrás.
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       } on FirebaseAuthException catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Error desconocido')),
-        );
+        // Muestra un mensaje de error si las credenciales son incorrectas
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message ?? 'Error de autenticación')),
+          );
+        }
       } finally {
+        // Asegura que el indicador de carga se oculte siempre
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -48,46 +66,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Iniciar Sesión')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Correo Electrónico',
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Correo Electrónico',
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Por favor, ingrese un correo' : null,
                 ),
-                validator: (value) =>
-                    value!.isEmpty ? 'Por favor, ingrese un correo' : null,
-              ),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Contraseña'),
-                obscureText: true,
-                validator: (value) =>
-                    value!.isEmpty ? 'Por favor, ingrese una contraseña' : null,
-              ),
-              const SizedBox(height: 20),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _login,
-                      child: const Text('Entrar'),
-                    ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const RegisterScreen(),
-                    ),
-                  );
-                },
-                child: const Text('¿No tienes una cuenta? Regístrate'),
-              ),
-            ],
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(labelText: 'Contraseña'),
+                  obscureText: true,
+                  validator: (value) => value!.isEmpty
+                      ? 'Por favor, ingrese una contraseña'
+                      : null,
+                ),
+                const SizedBox(height: 24),
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: _login,
+                        child: const Text('Entrar'),
+                      ),
+                TextButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          // Navega a la pantalla de registro
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterScreen(),
+                            ),
+                          );
+                        },
+                  child: const Text('¿No tienes una cuenta? Regístrate'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

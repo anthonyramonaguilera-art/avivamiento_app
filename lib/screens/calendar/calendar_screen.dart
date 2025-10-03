@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:avivamiento_app/providers/services_provider.dart';
-import 'package:avivamiento_app/providers/user_data_provider.dart'; // [NUEVO]
+import 'package:avivamiento_app/providers/events_provider.dart';
+import 'package:avivamiento_app/providers/user_data_provider.dart';
 import 'package:avivamiento_app/screens/calendar/create_event_screen.dart';
 
 class CalendarScreen extends ConsumerWidget {
@@ -14,7 +14,6 @@ class CalendarScreen extends ConsumerWidget {
     final eventsAsyncValue = ref.watch(eventsProvider);
     final userProfile = ref.watch(userProfileProvider);
 
-    // [NUEVO] Lógica para determinar si el usuario es administrador
     final bool isAdmin = userProfile.when(
       data: (user) => user?.rol == 'Pastor' || user?.rol == 'Líder',
       loading: () => false,
@@ -22,7 +21,6 @@ class CalendarScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      // [CAMBIO] Envolvemos en un Scaffold
       body: eventsAsyncValue.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) =>
@@ -49,12 +47,15 @@ class CalendarScreen extends ConsumerWidget {
           );
         },
       ),
-      // [NUEVO] Mostramos el botón flotante solo si el usuario es admin
       floatingActionButton: isAdmin
           ? FloatingActionButton(
+              // [CORRECCIÓN] Añadimos un tag único diferente al del feed
+              heroTag: 'add_event_button',
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => CreateEventScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const CreateEventScreen(),
+                  ),
                 );
               },
               child: const Icon(Icons.add),

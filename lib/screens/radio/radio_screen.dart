@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:avivamiento_app/providers/services_provider.dart'; // Importamos el provider del chat
 import 'package:avivamiento_app/providers/user_data_provider.dart'; // Para saber quién envía el mensaje
 import 'package:avivamiento_app/providers/audio_provider.dart'; // Providers de audio
+import 'package:avivamiento_app/providers/chat_provider.dart'; // Para chatMessagesProvider
 
 // Widgets del chat que crearemos a continuación
 import 'package:avivamiento_app/screens/radio/widgets/chat_bubble.dart';
@@ -28,7 +28,6 @@ class RadioScreen extends ConsumerWidget {
 
     // [NUEVO] Leemos los mensajes del chat
     final messagesAsyncValue = ref.watch(chatMessagesProvider);
-    // [NUEVO] Obtenemos el perfil del usuario para saber si puede chatear
     final userProfile = ref.watch(userProfileProvider);
     final bool canChat =
         userProfile.value != null && userProfile.value?.rol != 'Invitado';

@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:avivamiento_app/providers/services_provider.dart';
-import 'package:avivamiento_app/providers/user_data_provider.dart'; // [NUEVO]
-import 'package:avivamiento_app/screens/feed/create_post_screen.dart'; // [NUEVO]
+import 'package:avivamiento_app/providers/posts_provider.dart';
+import 'package:avivamiento_app/providers/user_data_provider.dart';
+import 'package:avivamiento_app/screens/feed/create_post_screen.dart';
 import 'package:avivamiento_app/screens/widgets/post_card.dart';
 
 class FeedScreen extends ConsumerWidget {
@@ -13,11 +13,8 @@ class FeedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final postsAsyncValue = ref.watch(postsProvider);
-    final userProfile = ref.watch(
-      userProfileProvider,
-    ); // [NUEVO] Leemos el perfil del usuario
+    final userProfile = ref.watch(userProfileProvider);
 
-    // [NUEVO] Lógica para determinar si el usuario es un administrador
     final bool isAdmin = userProfile.when(
       data: (user) => user?.rol == 'Pastor' || user?.rol == 'Líder',
       loading: () => false,
@@ -25,9 +22,7 @@ class FeedScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      // [CAMBIO] Envolvemos en un Scaffold para el FloatingActionButton
       body: postsAsyncValue.when(
-        // ... (el código de .when no cambia)
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Text('No se pudieron cargar las publicaciones: $error'),
@@ -51,9 +46,10 @@ class FeedScreen extends ConsumerWidget {
           );
         },
       ),
-      // [NUEVO] Mostramos el botón solo si el usuario es admin
       floatingActionButton: isAdmin
           ? FloatingActionButton(
+              // [CORRECCIÓN] Añadimos un tag único para el Hero
+              heroTag: 'add_post_button',
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -63,7 +59,7 @@ class FeedScreen extends ConsumerWidget {
               },
               child: const Icon(Icons.add),
             )
-          : null, // Si no es admin, no mostramos nada
+          : null,
     );
   }
 }
