@@ -9,7 +9,9 @@ import 'package:avivamiento_app/services/user_service.dart';
 import 'package:avivamiento_app/services/post_service.dart';
 import 'package:avivamiento_app/services/event_service.dart';
 import 'package:avivamiento_app/services/chat_service.dart';
-import 'package:avivamiento_app/services/notification_service.dart'; // [NUEVO]
+import 'package:avivamiento_app/services/notification_service.dart';
+import 'package:avivamiento_app/services/conference_service.dart'; // [AÑADE ESTA LÍNEA]
+// [NUEVO]
 
 // --- Instancias de Firebase (Singletons) ---
 final firebaseAuthProvider = Provider<FirebaseAuth>(
@@ -47,4 +49,8 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 
 final livestreamServiceProvider = Provider<LivestreamService>((ref) {
   return LivestreamService(ref.watch(firestoreProvider));
+});
+
+final conferenceServiceProvider = Provider<ConferenceService>((ref) {
+  return ConferenceService(ref.watch(firestoreProvider));
 });

@@ -1,3 +1,5 @@
+// lib/screens/home_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:avivamiento_app/screens/profile/profile_screen.dart';
@@ -5,20 +7,22 @@ import 'package:avivamiento_app/screens/feed/feed_screen.dart';
 import 'package:avivamiento_app/screens/calendar/calendar_screen.dart';
 import 'package:avivamiento_app/screens/donations/donations_screen.dart';
 import 'package:avivamiento_app/screens/radio/radio_screen.dart';
-import 'package:avivamiento_app/screens/livestreams/livestreams_screen.dart'; // [NUEVO]
+import 'package:avivamiento_app/screens/livestreams/livestreams_screen.dart';
+import 'package:avivamiento_app/screens/conferences/conferences_screen.dart'; // [NUEVO]
 
 final selectedIndexProvider = StateProvider<int>((ref) => 0);
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  // [CAMBIO] Añadimos la LivestreamsScreen a la lista
+  // [CAMBIO] Añadimos la ConferencesScreen a la lista
   static const List<Widget> _widgetOptions = <Widget>[
     FeedScreen(),
     CalendarScreen(),
-    LivestreamsScreen(), // [NUEVO]
+    LivestreamsScreen(),
+    ConferencesScreen(), // [NUEVO]
     RadioScreen(),
-    DonationsScreen(),
+    // Hemos movido Donaciones al menú de perfil para hacer espacio
   ];
 
   @override
@@ -41,7 +45,6 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: IndexedStack(index: selectedIndex, children: _widgetOptions),
       bottomNavigationBar: BottomNavigationBar(
-        // [CAMBIO] Añadimos el nuevo item para las Retransmisiones
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
           BottomNavigationBarItem(
@@ -49,15 +52,15 @@ class HomeScreen extends ConsumerWidget {
             label: 'Calendario',
           ),
           BottomNavigationBarItem(
-            // [NUEVO]
             icon: Icon(Icons.video_library),
             label: 'Videos',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.radio), label: 'Radio'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.volunteer_activism),
-            label: 'Donar',
+            // [NUEVO]
+            icon: Icon(Icons.group),
+            label: 'Reuniones',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.radio), label: 'Radio'),
         ],
         currentIndex: selectedIndex,
         selectedItemColor: Colors.blue,
