@@ -43,6 +43,7 @@ dependencies:
 #imgbb
   http: ^1.2.1
   firebase_storage: ^11.7.7
+  firebase_messaging: ^14.9.4
 
 
 dev_dependencies:
