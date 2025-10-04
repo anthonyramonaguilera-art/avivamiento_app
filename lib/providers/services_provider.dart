@@ -3,7 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:avivamiento_app/services/livestream_service.dart';
 import 'package:avivamiento_app/services/auth_service.dart';
 import 'package:avivamiento_app/services/user_service.dart';
 import 'package:avivamiento_app/services/post_service.dart';
@@ -43,4 +43,8 @@ final chatServiceProvider = Provider<ChatService>((ref) {
 // [NUEVO] Proveedor para nuestro servicio de notificaciones
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService();
+});
+
+final livestreamServiceProvider = Provider<LivestreamService>((ref) {
+  return LivestreamService(ref.watch(firestoreProvider));
 });
