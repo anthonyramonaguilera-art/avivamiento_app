@@ -22,17 +22,22 @@ class PostService {
         });
   }
 
-  /// **[NUEVO]** Crea un nuevo documento de publicación en Firestore.
+  /// [MODIFICADO] Crea un nuevo documento de publicación en Firestore.
   Future<void> createPost({
     required String content,
     required String authorId,
     required String authorName,
+    String? authorPhotoUrl, // [AÑADIDO] Parámetro para la foto (opcional)
+    required String authorRole, // [AÑADIDO] Parámetro para el rol
   }) {
     return _postsCollection.add({
       'content': content,
       'authorId': authorId,
       'authorName': authorName,
-      'timestamp': FieldValue.serverTimestamp(), // Usamos la hora del servidor
+      'authorPhotoUrl':
+          authorPhotoUrl, // [AÑADIDO] Guardamos la foto en el documento
+      'authorRole': authorRole, // [AÑADIDO] Guardamos el rol en el documento
+      'timestamp': FieldValue.serverTimestamp(),
       'likes': 0,
     });
   }
