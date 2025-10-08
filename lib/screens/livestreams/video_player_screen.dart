@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+/// Una pantalla que muestra un video usando un WebView.
+/// Es ideal para incrustar reproductores de plataformas como YouTube o Vimeo.
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
   final String title;
@@ -18,6 +20,7 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+  // Hacemos el controlador 'late final' para asegurar su inicialización.
   late final WebViewController _controller;
   bool _isLoading = true;
 
@@ -25,23 +28,33 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void initState() {
     super.initState();
 
-    // Preparamos el controlador del WebView
+    // La configuración del controlador ahora se hace de forma más fluida y declarativa.
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) {
-            // Cuando la página del video termina de cargar, ocultamos el indicador
+            // Ocultamos el indicador de carga solo cuando la página ha cargado completamente.
             if (mounted) {
               setState(() {
                 _isLoading = false;
               });
             }
           },
+          onWebResourceError: (WebResourceError error) {
+            // Añadimos un manejo de errores robusto para facilitar la depuración futura.
+            debugPrint('''
+              Page resource error:
+              code: ${error.errorCode}
+              description: ${error.description}
+              errorType: ${error.errorType}
+              isForMainFrame: ${error.isForMainFrame}
+            ''');
+          },
         ),
       )
-      // Cargamos la URL del video que recibimos
+      // Finalmente, cargamos la URL del video que recibimos.
       ..loadRequest(Uri.parse(widget.videoUrl));
   }
 
@@ -49,15 +62,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title), // Mostramos el título del video
+        title: Text(widget.title),
       ),
       body: Stack(
         children: [
-          // El WebView que muestra el video
+          // El WebView que muestra el video.
           WebViewWidget(controller: _controller),
 
-          // Muestra un indicador de carga mientras el video se prepara
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
+          // Muestra un indicador de carga mientras el WebView se prepara.
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
         ],
       ),
     );
