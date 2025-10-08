@@ -23,7 +23,6 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         _isLoading = true;
       });
 
-      // Obtenemos los datos del usuario actual para saber quién es el autor
       final user = ref.read(userProfileProvider).value;
       if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -39,12 +38,15 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
       try {
         final postService = ref.read(postServiceProvider);
+        // [MODIFICADO] Ahora pasamos los datos desnormalizados del autor.
         await postService.createPost(
           content: _textController.text.trim(),
           authorId: user.id,
           authorName: user.nombre,
+          authorPhotoUrl: user.fotoUrl, // <-- AÑADIDO
+          authorRole: user.rol, // <-- AÑADIDO
         );
-        if (mounted) Navigator.of(context).pop(); // Volvemos al feed
+        if (mounted) Navigator.of(context).pop();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error al crear la publicación: $e')),
@@ -61,6 +63,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ... El resto del archivo no cambia ...
     return Scaffold(
       appBar: AppBar(
         title: const Text('Crear Nueva Publicación'),
@@ -86,7 +89,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               hintText: '¿Qué estás pensando?',
               border: InputBorder.none,
             ),
-            maxLines: null, // Permite múltiples líneas
+            maxLines: null,
             validator: (value) => value!.trim().isEmpty
                 ? 'El contenido no puede estar vacío'
                 : null,
