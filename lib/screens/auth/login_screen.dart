@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:avivamiento_app/screens/auth/register_screen.dart';
-import 'package:avivamiento_app/screens/auth/forgot_password_screen.dart'; // [NUEVO] Importamos la nueva pantalla
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -28,23 +27,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
+    // Valida que el formulario tenga datos correctos
     if (_formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
+      setState(() {
+        _isLoading = true;
+      });
       try {
         final authService = ref.read(authServiceProvider);
         await authService.signInWithEmailAndPassword(
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        if (mounted) Navigator.of(context).pop();
+
+        // [CORRECCIÓN] Si el login es exitoso, cerramos esta pantalla
+        // para revelar la HomeScreen que está detrás.
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       } on FirebaseAuthException catch (e) {
+        // Muestra un mensaje de error si las credenciales son incorrectas
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.message ?? 'Error de autenticación')),
           );
         }
       } finally {
-        if (mounted) setState(() => _isLoading = false);
+        // Asegura que el indicador de carga se oculte siempre
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -64,35 +77,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Correo Electrónico'),
+                  decoration: const InputDecoration(
+                    labelText: 'Correo Electrónico',
+                  ),
                   keyboardType: TextInputType.emailAddress,
-                  validator: (value) => value!.isEmpty ? 'Por favor, ingrese un correo' : null,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Por favor, ingrese un correo' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _passwordController,
                   decoration: const InputDecoration(labelText: 'Contraseña'),
                   obscureText: true,
-                  validator: (value) => value!.isEmpty ? 'Por favor, ingrese una contraseña' : null,
+                  validator: (value) => value!.isEmpty
+                      ? 'Por favor, ingrese una contraseña'
+                      : null,
                 ),
-
-                // [NUEVO] Botón para ir a la pantalla de recuperación de contraseña
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
-                        );
-                      },
-                      child: const Text('¿Olvidaste tu contraseña?'),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
@@ -103,8 +104,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: _isLoading
                       ? null
                       : () {
+                          // Navega a la pantalla de registro
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterScreen(),
+                            ),
                           );
                         },
                   child: const Text('¿No tienes una cuenta? Regístrate'),
