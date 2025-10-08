@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+<string>Necesitamos acceso a la cámara para que puedas participar en las videoconferencias.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Necesitamos acceso al micrófono para que puedan escucharte en las videoconferencias.</string>
 </dict>
 </plist>
