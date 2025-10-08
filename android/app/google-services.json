@@ -12,7 +12,20 @@
           "package_name": "com.example.avivamiento_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1004105871009-fhono8b47p8o65rlkjhjb8a0r27f6iid.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.avivamiento_app",
+            "certificate_hash": "4a5223a89ed4b18ee83da7a1ed06eb211dbfa2de"
+          }
+        },
+        {
+          "client_id": "1004105871009-nebkbsje1tp1vagblffus9l0q63864u0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC1hcGuCIPZhyzoCDm8cusdMV2pDEBMjAs"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1004105871009-nebkbsje1tp1vagblffus9l0q63864u0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1004105871009-7skmjra04tonk8ep6erkgqqd5sq95c97.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.avivamientoApp"
+              }
+            }
+          ]
         }
       }
     }
