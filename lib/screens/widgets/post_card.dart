@@ -1,10 +1,8 @@
-// lib/screens/feed/widgets/post_card.dart
+// lib/screens/widgets/post_card.dart
 
-import 'package:flutter/material.dart'; // RUTA CORREGIDA
-import 'package:avivamiento_app/models/post_model.dart'; // RUTA CORREGIDA
+import 'package:flutter/material.dart';
+import 'package:avivamiento_app/models/post_model.dart';
 
-/// Un widget que muestra una única publicación en un formato de tarjeta.
-/// Es un [StatelessWidget] porque solo muestra datos y no gestiona estado interno.
 class PostCard extends StatelessWidget {
   final PostModel post;
 
@@ -12,6 +10,10 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // [NUEVO] Lógica para determinar si hay una URL de foto válida.
+    final bool hasPhoto =
+        post.authorPhotoUrl != null && post.authorPhotoUrl!.isNotEmpty;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       elevation: 4,
@@ -20,12 +22,17 @@ class PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Encabezado con el nombre del autor y la fecha.
             Row(
               children: [
-                const CircleAvatar(
-                  child: Icon(Icons.person),
-                ), // Placeholder para la foto del autor
+                // [MODIFICADO] El CircleAvatar ahora es dinámico.
+                CircleAvatar(
+                  // Si hay foto, usa NetworkImage.
+                  backgroundImage: hasPhoto
+                      ? NetworkImage(post.authorPhotoUrl!)
+                      : null,
+                  // Si no hay foto, muestra el ícono de persona.
+                  child: !hasPhoto ? const Icon(Icons.person) : null,
+                ),
                 const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,9 +41,9 @@ class PostCard extends StatelessWidget {
                       post.authorName,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
+                    // [AÑADIDO] Mostramos el rol del autor.
                     Text(
-                      // Formateamos la fecha para que sea legible.
-                      '${post.timestamp.toDate().day}/${post.timestamp.toDate().month}/${post.timestamp.toDate().year}',
+                      post.authorRole,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -44,7 +51,6 @@ class PostCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            // Contenido de la publicación.
             Text(post.content, style: const TextStyle(fontSize: 16)),
           ],
         ),
