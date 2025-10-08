@@ -2,50 +2,48 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Representa el modelo de datos para una publicación en el feed.
-///
-/// Cada instancia corresponde a un documento en la colección 'posts' de Firestore.
-/// Es inmutable para asegurar un estado consistente.
 class PostModel {
-  /// El ID único del documento de la publicación.
   final String id;
-
-  /// El ID del autor (corresponde al UID del UserModel).
   final String authorId;
-
-  /// El nombre del autor para mostrarlo directamente en la UI.
   final String authorName;
 
-  /// El contenido de texto de la publicación.
+  // [AÑADIDO] Un campo para guardar la URL de la foto del autor.
+  // Es opcional (puede ser nulo) por si un usuario no tiene foto.
+  final String? authorPhotoUrl;
+
+  // [AÑADIDO] Un campo para guardar el rol del autor.
+  final String authorRole;
+
   final String content;
-
-  /// La URL de una imagen asociada (opcional).
   final String? imageUrl;
-
-  /// La fecha y hora de creación de la publicación.
   final Timestamp timestamp;
-
-  /// Un contador de "me gusta" (para futuras funcionalidades).
   final int likes;
 
   PostModel({
     required this.id,
     required this.authorId,
     required this.authorName,
+    this.authorPhotoUrl, // [AÑADIDO] Lo agregamos al constructor.
+    required this.authorRole, // [AÑADIDO] Lo agregamos al constructor.
     required this.content,
     this.imageUrl,
     required this.timestamp,
-    this.likes = 0, // Valor por defecto para los 'me gusta'.
+    this.likes = 0,
   });
 
-  /// Factory constructor para crear una instancia de [PostModel] desde un mapa de Firestore.
-  ///
-  /// Esencial para convertir los datos leídos de la base de datos a un objeto Dart.
+  /// Factory para crear un PostModel desde los datos de Firestore.
   factory PostModel.fromMap(Map<String, dynamic> data, String documentId) {
     return PostModel(
       id: documentId,
       authorId: data['authorId'] ?? '',
       authorName: data['authorName'] ?? 'Autor Desconocido',
+
+      // [AÑADIDO] Leemos el nuevo campo desde la base de datos.
+      authorPhotoUrl: data['authorPhotoUrl'],
+
+      // [AÑADIDO] Leemos el rol. Si no existe, le asignamos 'Miembro' por defecto.
+      authorRole: data['authorRole'] ?? 'Miembro',
+
       content: data['content'] ?? '',
       imageUrl: data['imageUrl'],
       timestamp: data['timestamp'] ?? Timestamp.now(),
