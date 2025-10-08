@@ -22,18 +22,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _pickAndUploadImage(UserModel user) async {
     // ... (este método no cambia)
     final imagePicker = ImagePicker();
-    final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final pickedFile = await imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
 
     if (pickedFile != null) {
       setState(() => _isLoading = true);
       try {
         final userService = ref.read(userServiceProvider);
-        final downloadUrl = await userService.uploadProfilePictureToImgbb(pickedFile);
+        final downloadUrl = await userService.uploadProfilePictureToImgbb(
+          pickedFile,
+        );
         await userService.updateUserProfile(uid: user.id, fotoUrl: downloadUrl);
         ref.invalidate(userProfileProvider);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto de perfil actualizada')));
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Foto de perfil actualizada')),
+          );
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al subir la imagen: $e')));
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al subir la imagen: $e')),
+          );
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -48,9 +59,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Cambiar Nombre'),
-          content: TextField(controller: nameController, decoration: const InputDecoration(hintText: "Nuevo nombre"), autofocus: true),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(hintText: "Nuevo nombre"),
+            autofocus: true,
+          ),
           actions: <Widget>[
-            TextButton(child: const Text('Cancelar'), onPressed: () => Navigator.of(context).pop()),
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
             TextButton(
               child: const Text('Guardar'),
               onPressed: () async {
@@ -58,11 +76,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 final newName = nameController.text.trim();
                 if (newName.isNotEmpty && newName != user.nombre) {
                   try {
-                    await ref.read(userServiceProvider).updateUserProfile(uid: user.id, nombre: newName);
+                    await ref
+                        .read(userServiceProvider)
+                        .updateUserProfile(uid: user.id, nombre: newName);
                     ref.invalidate(userProfileProvider);
-                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nombre actualizado')));
+                    if (mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Nombre actualizado')),
+                      );
                   } catch (e) {
-                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al actualizar el nombre: $e')));
+                    if (mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al actualizar el nombre: $e'),
+                        ),
+                      );
                   }
                 }
               },
@@ -84,11 +112,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         error: (error, stackTrace) => Center(child: Text('Error: $error')),
         data: (user) {
           if (user == null) {
-            return const Center(child: Text('Debes iniciar sesión para ver tu perfil.'));
+            return const Center(
+              child: Text('Debes iniciar sesión para ver tu perfil.'),
+            );
           }
 
           // [CAMBIO] Usamos las constantes para verificar el permiso
-          final bool canAccessPanel = [AppConstants.rolePastor, AppConstants.roleAdmin].contains(user.rol);
+          final bool canAccessPanel = [
+            AppConstants.rolePastor,
+            AppConstants.roleAdmin,
+          ].contains(user.rol);
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
@@ -102,31 +135,93 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.grey.shade300,
-                        backgroundImage: user.fotoUrl != null && user.fotoUrl!.isNotEmpty ? NetworkImage(user.fotoUrl!) : null,
-                        child: user.fotoUrl == null || user.fotoUrl!.isEmpty ? const Icon(Icons.person, size: 60, color: Colors.white) : null,
+                        backgroundImage:
+                            user.fotoUrl != null && user.fotoUrl!.isNotEmpty
+                            ? NetworkImage(user.fotoUrl!)
+                            : null,
+                        child: user.fotoUrl == null || user.fotoUrl!.isEmpty
+                            ? const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.white,
+                              )
+                            : null,
                       ),
-                      Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 22, backgroundColor: Colors.white, child: CircleAvatar(radius: 20, backgroundColor: Theme.of(context).primaryColor, child: IconButton(icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20), onPressed: () => _pickAndUploadImage(user))))),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.white,
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Theme.of(context).primaryColor,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              onPressed: () => _pickAndUploadImage(user),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-                if (_isLoading) const Padding(padding: EdgeInsets.only(bottom: 16.0), child: Center(child: CircularProgressIndicator())),
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
                 Card(
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          Flexible(child: Text('Nombre: ${user.nombre}', style: const TextStyle(fontSize: 18), overflow: TextOverflow.ellipsis)),
-                          IconButton(icon: const Icon(Icons.edit, size: 20, color: Colors.grey), onPressed: () => _showEditNameDialog(user)),
-                        ]),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'Nombre: ${user.nombre}',
+                                style: const TextStyle(fontSize: 18),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                size: 20,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () => _showEditNameDialog(user),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 8),
-                        Text('Email: ${user.email}', style: const TextStyle(fontSize: 16, color: Colors.black54)),
+                        Text(
+                          'Email: ${user.email}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black54,
+                          ),
+                        ),
                         const SizedBox(height: 8),
-                        Text('Rol: ${user.rol}', style: const TextStyle(fontSize: 16, color: Colors.black54)),
+                        Text(
+                          'Rol: ${user.rol}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black54,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -145,20 +240,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       label: const Text('Panel de Administración'),
                       onPressed: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const AdminPanelScreen(),
+                          ),
                         );
                       },
                     ),
                   ),
 
                 const Spacer(),
+
+                // Dentro de tu archivo profile_screen.dart...
+                // Dentro de tu archivo profile_screen.dart...
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                  ),
                   onPressed: () {
+                    // [CAMBIO CLAVE] Solo llamamos al método signOut.
+                    // NO navegamos manualmente. Dejamos que el StreamProvider en main.dart
+                    // detecte el cambio de estado y nos redirija automáticamente.
                     ref.read(authServiceProvider).signOut();
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                    }
                   },
                   child: const Text('Cerrar Sesión'),
                 ),
