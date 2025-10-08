@@ -46,6 +46,7 @@ dependencies:
   firebase_messaging: ^14.9.4
   url_launcher: ^6.3.2
   webview_flutter: ^4.13.0
+  jitsi_meet_flutter_sdk: ^11.5.1
 
 
 dev_dependencies:
