@@ -3,10 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:avivamiento_app/models/chat_message_model.dart';
 
-/// Una "burbuja" que representa un único mensaje en el chat.
 class ChatBubble extends StatelessWidget {
   final ChatMessageModel message;
-  final bool isMe; // Para alinear el mensaje a la derecha si es mío
+  final bool isMe;
 
   const ChatBubble({super.key, required this.message, required this.isMe});
 
@@ -24,8 +23,9 @@ class ChatBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // [MODIFICADO] Mostramos el nombre y el rol juntos.
             Text(
-              message.authorName,
+              '${message.authorName} (${message.authorRole})',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             ),
             Text(message.text),
