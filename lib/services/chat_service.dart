@@ -5,15 +5,12 @@ import 'package:avivamiento_app/models/chat_message_model.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore;
-  // Creamos una referencia a la colección del chat, ordenada por fecha.
   late final CollectionReference<Map<String, dynamic>> _chatCollection;
 
   ChatService(this._firestore) {
     _chatCollection = _firestore.collection('radio_chat');
   }
 
-  /// Obtiene un Stream con la lista de mensajes del chat.
-  /// Usamos `limit(50)` para no cargar mensajes muy antiguos y mantener la app fluida.
   Stream<List<ChatMessageModel>> getChatMessagesStream() {
     return _chatCollection
         .orderBy('timestamp', descending: true)
@@ -26,16 +23,20 @@ class ChatService {
         });
   }
 
-  /// Envía un nuevo mensaje a la colección.
+  /// [MODIFICADO] Envía un nuevo mensaje a la colección.
   Future<void> sendMessage({
     required String text,
     required String authorId,
     required String authorName,
+    String? authorPhotoUrl, // [AÑADIDO] Parámetro para la foto
+    required String authorRole, // [AÑADIDO] Parámetro para el rol
   }) {
     return _chatCollection.add({
       'text': text,
       'authorId': authorId,
       'authorName': authorName,
+      'authorPhotoUrl': authorPhotoUrl, // [AÑADIDO]
+      'authorRole': authorRole, // [AÑADIDO]
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
