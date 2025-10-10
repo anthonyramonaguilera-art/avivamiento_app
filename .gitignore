@@ -49,3 +49,6 @@ lib/firebase_options.dart
 
 # Ignorar archivo de variables de entorno con claves secretas
 .env 
+
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist

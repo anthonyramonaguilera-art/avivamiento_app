@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:avivamiento_app/models/post_model.dart';
+import 'package:avivamiento_app/utils/app_helpers.dart'; // <-- 1. IMPORTA EL HELPER
 
 class PostCard extends StatelessWidget {
   final PostModel post;
@@ -10,7 +11,6 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // [NUEVO] Lógica para determinar si hay una URL de foto válida.
     final bool hasPhoto =
         post.authorPhotoUrl != null && post.authorPhotoUrl!.isNotEmpty;
 
@@ -24,13 +24,10 @@ class PostCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                // [MODIFICADO] El CircleAvatar ahora es dinámico.
                 CircleAvatar(
-                  // Si hay foto, usa NetworkImage.
                   backgroundImage: hasPhoto
                       ? NetworkImage(post.authorPhotoUrl!)
                       : null,
-                  // Si no hay foto, muestra el ícono de persona.
                   child: !hasPhoto ? const Icon(Icons.person) : null,
                 ),
                 const SizedBox(width: 10),
@@ -41,10 +38,27 @@ class PostCard extends StatelessWidget {
                       post.authorName,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    // [AÑADIDO] Mostramos el rol del autor.
-                    Text(
-                      post.authorRole,
-                      style: Theme.of(context).textTheme.bodySmall,
+                    Row(
+                      children: [
+                        // --- 2. APLICA EL COLOR AL ROL ---
+                        Text(
+                          '${post.authorRole} • ',
+                          style: TextStyle(
+                            fontSize: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.fontSize,
+                            color: getRoleColor(
+                              post.authorRole,
+                            ), // <-- USA LA FUNCIÓN
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        // --- 3. MUESTRA LA FECHA ---
+                        Text(
+                          '${post.timestamp.toDate().day}/${post.timestamp.toDate().month}/${post.timestamp.toDate().year}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
                   ],
                 ),
