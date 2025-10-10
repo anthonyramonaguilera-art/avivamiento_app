@@ -62,6 +62,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  /// [NUEVO] Maneja el flujo de inicio de sesión con Google.
+  Future<void> _loginWithGoogle() async {
+    setState(() => _isLoading = true);
+    try {
+      final authService = ref.read(authServiceProvider);
+      final userService = ref.read(userServiceProvider);
+      await authService.signInWithGoogle(userService);
+
+      // Si el login es exitoso, el stream nos llevará a la HomeScreen,
+      // así que cerramos esta pantalla.
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al iniciar sesión con Google: $e')),
+        );
+      }
+    } finally {
+      // Nos aseguramos de que el indicador de carga se oculte siempre.
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,6 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // --- SECCIÓN DE LOGIN CON CORREO ---
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -113,6 +137,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         },
                   child: const Text('¿No tienes una cuenta? Regístrate'),
                 ),
+
+                // [NUEVO] Muestra un indicador de carga en la parte inferior si _isLoading es true
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
               ],
             ),
           ),
