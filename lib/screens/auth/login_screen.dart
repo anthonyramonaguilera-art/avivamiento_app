@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:avivamiento_app/screens/auth/register_screen.dart';
-import 'package:avivamiento_app/screens/auth/forgot_password_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -28,25 +27,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Valida y procesa el inicio de sesión con correo y contraseña.
+    // Valida que el formulario tenga datos correctos
     if (_formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
+      setState(() {
+        _isLoading = true;
+      });
       try {
         final authService = ref.read(authServiceProvider);
         await authService.signInWithEmailAndPassword(
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        // Si el login es exitoso, cerramos esta pantalla para volver a la anterior.
-        if (mounted) Navigator.of(context).pop();
+
+        // [CORRECCIÓN] Si el login es exitoso, cerramos esta pantalla
+        // para revelar la HomeScreen que está detrás.
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       } on FirebaseAuthException catch (e) {
+        // Muestra un mensaje de error si las credenciales son incorrectas
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.message ?? 'Error de autenticación')),
           );
         }
       } finally {
-        if (mounted) setState(() => _isLoading = false);
+        // Asegura que el indicador de carga se oculte siempre
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -106,61 +117,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ? 'Por favor, ingrese una contraseña'
                       : null,
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const ForgotPasswordScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text('¿Olvidaste tu contraseña?'),
-                    ),
-                  ),
-                ),
-                // El botón de entrar se deshabilita si ya se está procesando una acción.
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  child: const Text('Entrar'),
-                ),
-
-                // --- DIVISOR Y LOGIN CON GOOGLE ---
-                const SizedBox(height: 16),
-                const Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text('O'),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Botón de Google, se deshabilita si ya se está procesando una acción.
-                ElevatedButton.icon(
-                  icon: const Icon(
-                    Icons.login,
-                  ), // Puedes cambiar esto por un logo de Google
-                  label: const Text('Continuar con Google'),
-                  onPressed: _isLoading ? null : _loginWithGoogle,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black87,
-                  ),
-                ),
-
-                // --- NAVEGACIÓN A REGISTRO ---
-                const SizedBox(height: 8),
+                const SizedBox(height: 24),
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: _login,
+                        child: const Text('Entrar'),
+                      ),
                 TextButton(
                   onPressed: _isLoading
                       ? null
                       : () {
+                          // Navega a la pantalla de registro
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) => const RegisterScreen(),
