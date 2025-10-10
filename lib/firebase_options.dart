@@ -41,7 +41,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA_tdeDSXWMvhZ7SsY6XoHf8awdsqzOMb8',
+    apiKey: 'AIzaSyDFqh3Fxi72A4deAX2pOma2UR15r4MnTI4',
     appId: '1:1004105871009:web:34580dfc6327525b81cae0',
     messagingSenderId: '1004105871009',
     projectId: 'avivamiento-app-ef433',
@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC1hcGuCIPZhyzoCDm8cusdMV2pDEBMjAs',
+    apiKey: 'AIzaSyBZhU77JHNhEU0vhynsyteG54wYppp1G48',
     appId: '1:1004105871009:android:5189aa58c009d9d081cae0',
     messagingSenderId: '1004105871009',
     projectId: 'avivamiento-app-ef433',
@@ -59,25 +59,29 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyD0SafDsFozX9MWHmaJTU-bujwXyjxu7iY',
+    apiKey: 'AIzaSyDJX6dIhRm_Qe8z0diGSxCfCZk5IPjM8oI',
     appId: '1:1004105871009:ios:f4e7c6563b14a8e681cae0',
     messagingSenderId: '1004105871009',
     projectId: 'avivamiento-app-ef433',
     storageBucket: 'avivamiento-app-ef433.firebasestorage.app',
+    androidClientId: '1004105871009-fhono8b47p8o65rlkjhjb8a0r27f6iid.apps.googleusercontent.com',
+    iosClientId: '1004105871009-7skmjra04tonk8ep6erkgqqd5sq95c97.apps.googleusercontent.com',
     iosBundleId: 'com.example.avivamientoApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyD0SafDsFozX9MWHmaJTU-bujwXyjxu7iY',
+    apiKey: 'AIzaSyDJX6dIhRm_Qe8z0diGSxCfCZk5IPjM8oI',
     appId: '1:1004105871009:ios:f4e7c6563b14a8e681cae0',
     messagingSenderId: '1004105871009',
     projectId: 'avivamiento-app-ef433',
     storageBucket: 'avivamiento-app-ef433.firebasestorage.app',
+    androidClientId: '1004105871009-fhono8b47p8o65rlkjhjb8a0r27f6iid.apps.googleusercontent.com',
+    iosClientId: '1004105871009-7skmjra04tonk8ep6erkgqqd5sq95c97.apps.googleusercontent.com',
     iosBundleId: 'com.example.avivamientoApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyA_tdeDSXWMvhZ7SsY6XoHf8awdsqzOMb8',
+    apiKey: 'AIzaSyDNcdXznvBdf22lPsizRyHkXoJ3hJvcDfo',
     appId: '1:1004105871009:web:c3c8102acbdb82a681cae0',
     messagingSenderId: '1004105871009',
     projectId: 'avivamiento-app-ef433',
@@ -85,4 +89,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'avivamiento-app-ef433.firebasestorage.app',
     measurementId: 'G-4QP1D2YNY2',
   );
+
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:avivamiento_app/screens/auth/register_screen.dart';
+import 'package:avivamiento_app/screens/auth/forgot_password_screen.dart'; // Asegúrate que esta importación esté
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -27,51 +28,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Valida que el formulario tenga datos correctos
     if (_formKey.currentState?.validate() ?? false) {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
       try {
         final authService = ref.read(authServiceProvider);
         await authService.signInWithEmailAndPassword(
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-
-        // [CORRECCIÓN] Si el login es exitoso, cerramos esta pantalla
-        // para revelar la HomeScreen que está detrás.
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
+        if (mounted) Navigator.of(context).pop();
       } on FirebaseAuthException catch (e) {
-        // Muestra un mensaje de error si las credenciales son incorrectas
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.message ?? 'Error de autenticación')),
           );
         }
       } finally {
-        // Asegura que el indicador de carga se oculte siempre
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+        if (mounted) setState(() => _isLoading = false);
       }
     }
   }
 
-  /// [NUEVO] Maneja el flujo de inicio de sesión con Google.
   Future<void> _loginWithGoogle() async {
     setState(() => _isLoading = true);
     try {
       final authService = ref.read(authServiceProvider);
       final userService = ref.read(userServiceProvider);
       await authService.signInWithGoogle(userService);
-
-      // Si el login es exitoso, el stream nos llevará a la HomeScreen,
-      // así que cerramos esta pantalla.
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
@@ -80,7 +63,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } finally {
-      // Nos aseguramos de que el indicador de carga se oculte siempre.
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -117,18 +99,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ? 'Por favor, ingrese una contraseña'
                       : null,
                 ),
+                // --- BOTÓN DE OLVIDÉ MI CONTRASEÑA ---
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ForgotPasswordScreen(),
+                              ),
+                            );
+                          },
+                    child: const Text('¿Olvidaste tu contraseña?'),
+                  ),
+                ),
+                // --- BOTÓN DE ENTRAR ---
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  child: const Text('Entrar'),
+                ),
                 const SizedBox(height: 24),
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: _login,
-                        child: const Text('Entrar'),
-                      ),
+                // --- DIVISOR "O" ---
+                const Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text('O'),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // --- BOTÓN DE GOOGLE ---
+                ElevatedButton.icon(
+                  icon: const Icon(
+                    Icons.login,
+                  ), // Puedes cambiar esto por un logo de Google
+                  label: const Text('Continuar con Google'),
+                  onPressed: _isLoading ? null : _loginWithGoogle,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black87,
+                  ),
+                ),
+                // --- NAVEGACIÓN A REGISTRO ---
                 TextButton(
                   onPressed: _isLoading
                       ? null
                       : () {
-                          // Navega a la pantalla de registro
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) => const RegisterScreen(),
@@ -137,8 +159,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         },
                   child: const Text('¿No tienes una cuenta? Regístrate'),
                 ),
-
-                // [NUEVO] Muestra un indicador de carga en la parte inferior si _isLoading es true
                 if (_isLoading)
                   const Padding(
                     padding: EdgeInsets.only(top: 24.0),

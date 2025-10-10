@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Ignorar credenciales de Firebase
+lib/firebase_options.dart
+
+# Ignorar archivo de variables de entorno con claves secretas
+.env 
+
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist

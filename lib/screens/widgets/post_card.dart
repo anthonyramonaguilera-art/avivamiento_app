@@ -1,10 +1,9 @@
-// lib/screens/feed/widgets/post_card.dart
+// lib/screens/widgets/post_card.dart
 
-import 'package:flutter/material.dart'; // RUTA CORREGIDA
-import 'package:avivamiento_app/models/post_model.dart'; // RUTA CORREGIDA
+import 'package:flutter/material.dart';
+import 'package:avivamiento_app/models/post_model.dart';
+import 'package:avivamiento_app/utils/app_helpers.dart'; // <-- 1. IMPORTA EL HELPER
 
-/// Un widget que muestra una única publicación en un formato de tarjeta.
-/// Es un [StatelessWidget] porque solo muestra datos y no gestiona estado interno.
 class PostCard extends StatelessWidget {
   final PostModel post;
 
@@ -12,6 +11,9 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasPhoto =
+        post.authorPhotoUrl != null && post.authorPhotoUrl!.isNotEmpty;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       elevation: 4,
@@ -20,12 +22,14 @@ class PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Encabezado con el nombre del autor y la fecha.
             Row(
               children: [
-                const CircleAvatar(
-                  child: Icon(Icons.person),
-                ), // Placeholder para la foto del autor
+                CircleAvatar(
+                  backgroundImage: hasPhoto
+                      ? NetworkImage(post.authorPhotoUrl!)
+                      : null,
+                  child: !hasPhoto ? const Icon(Icons.person) : null,
+                ),
                 const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,17 +38,33 @@ class PostCard extends StatelessWidget {
                       post.authorName,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Text(
-                      // Formateamos la fecha para que sea legible.
-                      '${post.timestamp.toDate().day}/${post.timestamp.toDate().month}/${post.timestamp.toDate().year}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                    Row(
+                      children: [
+                        // --- 2. APLICA EL COLOR AL ROL ---
+                        Text(
+                          '${post.authorRole} • ',
+                          style: TextStyle(
+                            fontSize: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.fontSize,
+                            color: getRoleColor(
+                              post.authorRole,
+                            ), // <-- USA LA FUNCIÓN
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        // --- 3. MUESTRA LA FECHA ---
+                        Text(
+                          '${post.timestamp.toDate().day}/${post.timestamp.toDate().month}/${post.timestamp.toDate().year}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            // Contenido de la publicación.
             Text(post.content, style: const TextStyle(fontSize: 16)),
           ],
         ),
