@@ -1,11 +1,12 @@
 // lib/screens/auth/login_screen.dart
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:avivamiento_app/screens/auth/register_screen.dart';
-import 'package:avivamiento_app/screens/auth/forgot_password_screen.dart'; // Asegúrate que esta importación esté
+import 'package:avivamiento_app/screens/auth/forgot_password_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -28,24 +29,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
-      try {
-        final authService = ref.read(authServiceProvider);
-        await authService.signInWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signInWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      // --- [CORRECCIÓN CLAVE] ---
+      // Cerramos la pantalla de login para volver al AuthWrapper.
+      // `mounted` es una comprobación de seguridad para evitar errores
+      // si el widget se elimina mientras la operación asíncrona se completa.
+      if (mounted) Navigator.of(context).pop();
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Error de autenticación'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
-        if (mounted) Navigator.of(context).pop();
-      } on FirebaseAuthException catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? 'Error de autenticación')),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -55,11 +64,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final authService = ref.read(authServiceProvider);
       final userService = ref.read(userServiceProvider);
       await authService.signInWithGoogle(userService);
+
+      // --- [CORRECCIÓN CLAVE] ---
+      // También cerramos la pantalla después de un login con Google exitoso.
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al iniciar sesión con Google: $e')),
+          SnackBar(
+            content: Text('Error al iniciar con Google: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       }
     } finally {
@@ -69,18 +84,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // El resto del widget de la UI no cambia...
     return Scaffold(
-      appBar: AppBar(title: const Text('Iniciar Sesión')),
+      appBar: AppBar(
+        title: const Text('Iniciar Sesión'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.black87,
+      ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(
             key: _formKey,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // --- SECCIÓN DE LOGIN CON CORREO ---
+                Image.asset('assets/images/logo.png', height: 100),
+                const SizedBox(height: 48),
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -88,18 +109,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) =>
-                      value!.isEmpty ? 'Por favor, ingrese un correo' : null,
+                      value!.isEmpty ? 'Por favor, ingresa un correo' : null,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _passwordController,
                   decoration: const InputDecoration(labelText: 'Contraseña'),
                   obscureText: true,
                   validator: (value) => value!.isEmpty
-                      ? 'Por favor, ingrese una contraseña'
+                      ? 'Por favor, ingresa una contraseña'
                       : null,
                 ),
-                // --- BOTÓN DE OLVIDÉ MI CONTRASEÑA ---
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -116,38 +136,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: const Text('¿Olvidaste tu contraseña?'),
                   ),
                 ),
-                // --- BOTÓN DE ENTRAR ---
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _login,
-                  child: const Text('Entrar'),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Entrar'),
                 ),
-                const SizedBox(height: 24),
-                // --- DIVISOR "O" ---
-                const Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text('O'),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // --- BOTÓN DE GOOGLE ---
-                ElevatedButton.icon(
-                  icon: const Icon(
-                    Icons.login,
-                  ), // Puedes cambiar esto por un logo de Google
-                  label: const Text('Continuar con Google'),
-                  onPressed: _isLoading ? null : _loginWithGoogle,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black87,
-                  ),
-                ),
-                // --- NAVEGACIÓN A REGISTRO ---
-                TextButton(
+                const SizedBox(height: 16),
+                OutlinedButton(
                   onPressed: _isLoading
                       ? null
                       : () {
@@ -157,13 +154,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           );
                         },
-                  child: const Text('¿No tienes una cuenta? Regístrate'),
-                ),
-                if (_isLoading)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 24.0),
-                    child: Center(child: CircularProgressIndicator()),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
+                  child: const Text("¿No tienes cuenta? Regístrate"),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16.0),
+                  child: Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text('O'),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.g_mobiledata, size: 28),
+                  label: const Text('Continuar con Google'),
+                  onPressed: _isLoading ? null : _loginWithGoogle,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black87,
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
               ],
             ),
           ),
