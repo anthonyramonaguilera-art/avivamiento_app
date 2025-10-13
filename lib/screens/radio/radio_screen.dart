@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:lottie/lottie.dart';
 
 import 'package:avivamiento_app/providers/user_data_provider.dart';
 import 'package:avivamiento_app/providers/audio_provider.dart';
@@ -10,11 +11,7 @@ import 'package:avivamiento_app/providers/chat_provider.dart';
 import 'package:avivamiento_app/screens/radio/widgets/chat_bubble.dart';
 import 'package:avivamiento_app/screens/radio/widgets/message_input_field.dart';
 
-// --- [NUEVO] Provider para el estado del volumen ---
-/// Mantiene el estado del volumen del reproductor de la radio.
-///
-/// El valor va de 0.0 (silencio) a 1.0 (máximo).
-/// El valor inicial es 1.0.
+// Provider para el estado del volumen
 final volumeProvider = StateProvider<double>((ref) => 1.0);
 
 class RadioScreen extends ConsumerWidget {
@@ -23,12 +20,9 @@ class RadioScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // --- Observamos los providers que necesitamos ---
     final audioPlayer = ref.watch(audioPlayerProvider);
     final playerStateAsync = ref.watch(playerStateProvider);
-    final currentVolume = ref.watch(
-      volumeProvider,
-    ); // El valor actual del slider
+    final currentVolume = ref.watch(volumeProvider);
     final messagesAsyncValue = ref.watch(chatMessagesProvider);
     final userProfile = ref.watch(userProfileProvider);
 
@@ -42,17 +36,30 @@ class RadioScreen extends ConsumerWidget {
     return Scaffold(
       body: Column(
         children: [
-          // --- SECCIÓN DEL REPRODUCTOR ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              20.0,
-              20.0,
-              20.0,
-              10.0,
-            ), // Reducimos padding inferior
+            padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 10.0),
             child: Column(
               children: [
-                const Icon(Icons.radio, size: 100, color: Colors.blue),
+                // --- [CAMBIO] Usamos una Columna en lugar de un Stack ---
+
+                // 1. Tu logo, con un tamaño generoso
+                Image.asset(
+                  'assets/images/radio_logo.png', // Logo con fondo transparente
+                  height: 150,
+                  width: 150,
+                ),
+
+                // 2. La animación Lottie, ahora debajo del logo
+                SizedBox(
+                  height: 60, // Altura ajustada para que no ocupe mucho espacio
+                  width: 150,
+                  child: Lottie.asset(
+                    'assets/animations/sound_wave.json',
+                    animate: isPlaying,
+                  ),
+                ),
+
+                // --- FIN DEL CAMBIO ---
                 const SizedBox(height: 10),
                 const Text(
                   'Radio Avivamiento En Vivo',
@@ -70,27 +77,19 @@ class RadioScreen extends ConsumerWidget {
                     if (isPlaying) {
                       await audioPlayer.pause();
                     } else {
-                      await audioPlayer.setVolume(
-                        currentVolume,
-                      ); // Asegura el volumen al iniciar
+                      await audioPlayer.setVolume(currentVolume);
                       await audioPlayer.play(UrlSource(streamUrl));
                     }
                   },
                 ),
-
-                // --- [NUEVO] Widget del Slider de Volumen ---
                 Row(
                   children: [
                     const Icon(Icons.volume_down),
                     Expanded(
                       child: Slider(
                         value: currentVolume,
-                        min: 0.0,
-                        max: 1.0,
                         onChanged: (newVolume) {
-                          // Actualiza el estado del provider
                           ref.read(volumeProvider.notifier).state = newVolume;
-                          // Actualiza el volumen del reproductor en tiempo real
                           audioPlayer.setVolume(newVolume);
                         },
                       ),
@@ -102,8 +101,7 @@ class RadioScreen extends ConsumerWidget {
             ),
           ),
           const Divider(height: 1),
-
-          // --- SECCIÓN DEL CHAT (no cambia) ---
+          // El resto del código del chat no cambia...
           Expanded(
             child: messagesAsyncValue.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -122,8 +120,6 @@ class RadioScreen extends ConsumerWidget {
               },
             ),
           ),
-
-          // --- CAMPO DE TEXTO PARA ENVIAR MENSAJES (no cambia) ---
           if (canChat)
             const MessageInputField()
           else
