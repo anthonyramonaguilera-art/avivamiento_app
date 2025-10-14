@@ -2,7 +2,6 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Representa el modelo de datos para una publicación en el feed.
 class PostModel {
   final String id;
   final String authorId;
@@ -10,12 +9,15 @@ class PostModel {
   final String? authorPhotoUrl;
   final String authorRole;
   final String content;
-
-  /// [NUEVO] La URL de la imagen adjunta a la publicación, si existe.
   final String? imageUrl;
+
+  // --- [SOLUCIÓN] Campos añadidos para el video ---
+  final String? videoUrl;
+  final String? videoProvider;
 
   final Timestamp timestamp;
   final int likes;
+  final List<String> likedBy;
 
   PostModel({
     required this.id,
@@ -24,13 +26,18 @@ class PostModel {
     this.authorPhotoUrl,
     required this.authorRole,
     required this.content,
-    this.imageUrl, // Se añade al constructor
+    this.imageUrl,
+    this.videoUrl, // <-- Incluido en el constructor
+    this.videoProvider, // <-- Incluido en el constructor
     required this.timestamp,
     this.likes = 0,
+    this.likedBy = const [],
   });
 
-  /// Factory para crear un PostModel desde los datos de Firestore.
   factory PostModel.fromMap(Map<String, dynamic> data, String documentId) {
+    final List<dynamic> likedByFromDb = data['likedBy'] ?? [];
+    final List<String> likedByList = List<String>.from(likedByFromDb);
+
     return PostModel(
       id: documentId,
       authorId: data['authorId'] ?? '',
@@ -38,9 +45,12 @@ class PostModel {
       authorPhotoUrl: data['authorPhotoUrl'],
       authorRole: data['authorRole'] ?? 'Miembro',
       content: data['content'] ?? '',
-      imageUrl: data['imageUrl'], // Se lee el nuevo campo
+      imageUrl: data['imageUrl'],
+      videoUrl: data['videoUrl'], // <-- Mapeado desde Firestore
+      videoProvider: data['videoProvider'], // <-- Mapeado desde Firestore
       timestamp: data['timestamp'] ?? Timestamp.now(),
       likes: data['likes'] ?? 0,
+      likedBy: likedByList,
     );
   }
 }
