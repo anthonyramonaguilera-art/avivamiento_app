@@ -13,13 +13,14 @@ class EventService {
 
   Stream<List<EventModel>> getEventsStream() {
     return _eventsCollection
-        .orderBy('startTime', descending: false)
+        // [CAMBIO] Cambiamos 'descending' de false a true.
+        .orderBy('startTime', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return EventModel.fromMap(doc.data(), doc.id);
-          }).toList();
-        });
+      return snapshot.docs.map((doc) {
+        return EventModel.fromMap(doc.data(), doc.id);
+      }).toList();
+    });
   }
 
   /// **[NUEVO]** Crea un nuevo documento de evento en Firestore.
@@ -37,5 +38,20 @@ class EventService {
       'startTime': startTime,
       'endTime': endTime,
     });
+  }
+
+  /// **[NUEVO]** Actualiza un evento existente en Firestore.
+  ///
+  /// Utiliza el [eventId] para encontrar el documento y actualiza los campos
+  /// proporcionados en el mapa [data].
+  Future<void> updateEvent(String eventId, Map<String, dynamic> data) {
+    return _eventsCollection.doc(eventId).update(data);
+  }
+
+  /// **[NUEVO]** Elimina un evento de Firestore.
+  ///
+  /// Usa el [eventId] para localizar y eliminar el documento permanentemente.
+  Future<void> deleteEvent(String eventId) {
+    return _eventsCollection.doc(eventId).delete();
   }
 }
