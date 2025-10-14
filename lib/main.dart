@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // <-- 1. ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ
 
 import 'package:avivamiento_app/firebase_options.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
@@ -12,7 +13,12 @@ import 'package:avivamiento_app/screens/splash_screen.dart';
 void main() async {
   // Asegura que los bindings de Flutter estén inicializados.
   WidgetsFlutterBinding.ensureInitialized();
-  // Inicializa Firebase.
+
+  // --- [CORRECCIÓN] ---
+  // 2. Carga las variables de entorno del archivo .env ANTES de usarlas.
+  await dotenv.load(fileName: ".env");
+
+  // 3. Inicializa Firebase.
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final container = ProviderContainer();
@@ -27,9 +33,6 @@ void main() async {
 }
 
 /// El widget raíz de la aplicación.
-///
-/// Su única responsabilidad es construir el MaterialApp, definir el tema
-/// y establecer el SplashScreen como la pantalla de inicio.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -40,17 +43,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       // --- TEMA GLOBAL DE LA APLICACIÓN ---
-      // Aquí establecemos el diseño visual que se heredará en toda la app.
       theme: ThemeData(
         primarySwatch: Colors.blue,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0D47A1), // Un azul oscuro y elegante
-          primary: const Color(0xFF1565C0), // Un azul primario vibrante
-          secondary: const Color(0xFF64B5F6), // Un azul secundario más claro
-          background:
-              Colors.grey[50], // Un fondo casi blanco, limpio y minimalista
-          surface: Colors.white, // El color de las superficies como Cards
-          error: Colors.redAccent, // Un color de error claro
+          seedColor: const Color(0xFF0D47A1),
+          primary: const Color(0xFF1565C0),
+          secondary: const Color(0xFF64B5F6),
+          background: Colors.grey[50],
+          surface: Colors.white,
+          error: Colors.redAccent,
         ),
         useMaterial3: true,
         inputDecorationTheme: InputDecorationTheme(
@@ -90,10 +91,8 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      // --- FIN DEL TEMA ---
 
-      // La pantalla inicial de la app siempre será el SplashScreen.
-      // Él se encargará de la navegación inicial.
+      // --- FIN DEL TEMA ---
       home: const SplashScreen(),
     );
   }
