@@ -4,14 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:lottie/lottie.dart';
-
 import 'package:avivamiento_app/providers/user_data_provider.dart';
 import 'package:avivamiento_app/providers/audio_provider.dart';
 import 'package:avivamiento_app/providers/chat_provider.dart';
 import 'package:avivamiento_app/screens/radio/widgets/chat_bubble.dart';
 import 'package:avivamiento_app/screens/radio/widgets/message_input_field.dart';
+import 'package:avivamiento_app/screens/auth_screen.dart'; // [NUEVO] Para navegar a la pantalla de Auth
 
-// Provider para el estado del volumen
 final volumeProvider = StateProvider<double>((ref) => 1.0);
 
 class RadioScreen extends ConsumerWidget {
@@ -40,26 +39,19 @@ class RadioScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 10.0),
             child: Column(
               children: [
-                // --- [CAMBIO] Usamos una Columna en lugar de un Stack ---
-
-                // 1. Tu logo, con un tamaño generoso
                 Image.asset(
-                  'assets/images/radio_logo.png', // Logo con fondo transparente
+                  'assets/images/radio_logo.png',
                   height: 150,
                   width: 150,
                 ),
-
-                // 2. La animación Lottie, ahora debajo del logo
                 SizedBox(
-                  height: 60, // Altura ajustada para que no ocupe mucho espacio
+                  height: 60,
                   width: 150,
                   child: Lottie.asset(
                     'assets/animations/sound_wave.json',
                     animate: isPlaying,
                   ),
                 ),
-
-                // --- FIN DEL CAMBIO ---
                 const SizedBox(height: 10),
                 const Text(
                   'Radio Avivamiento En Vivo',
@@ -101,7 +93,6 @@ class RadioScreen extends ConsumerWidget {
             ),
           ),
           const Divider(height: 1),
-          // El resto del código del chat no cambia...
           Expanded(
             child: messagesAsyncValue.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -123,12 +114,30 @@ class RadioScreen extends ConsumerWidget {
           if (canChat)
             const MessageInputField()
           else
+            // --- [MODIFICADO] Mensaje y botón para usuarios invitados ---
             Container(
               padding: const EdgeInsets.all(12.0),
               color: Colors.grey[200],
-              child: const Text(
-                'Inicia sesión para participar en el chat.',
-                textAlign: TextAlign.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Inicia sesión para participar en el chat.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Navega a la pantalla principal de autenticación
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const AuthScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Iniciar Sesión o Registrarse'),
+                  ),
+                ],
               ),
             ),
         ],

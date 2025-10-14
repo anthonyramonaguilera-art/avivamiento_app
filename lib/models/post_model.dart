@@ -2,20 +2,18 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Representa el modelo de datos para una publicación en el feed.
 class PostModel {
   final String id;
   final String authorId;
   final String authorName;
-
-  // [AÑADIDO] Un campo para guardar la URL de la foto del autor.
-  // Es opcional (puede ser nulo) por si un usuario no tiene foto.
   final String? authorPhotoUrl;
-
-  // [AÑADIDO] Un campo para guardar el rol del autor.
   final String authorRole;
-
   final String content;
+
+  /// [NUEVO] La URL de la imagen adjunta a la publicación, si existe.
   final String? imageUrl;
+
   final Timestamp timestamp;
   final int likes;
 
@@ -23,10 +21,10 @@ class PostModel {
     required this.id,
     required this.authorId,
     required this.authorName,
-    this.authorPhotoUrl, // [AÑADIDO] Lo agregamos al constructor.
-    required this.authorRole, // [AÑADIDO] Lo agregamos al constructor.
+    this.authorPhotoUrl,
+    required this.authorRole,
     required this.content,
-    this.imageUrl,
+    this.imageUrl, // Se añade al constructor
     required this.timestamp,
     this.likes = 0,
   });
@@ -37,15 +35,10 @@ class PostModel {
       id: documentId,
       authorId: data['authorId'] ?? '',
       authorName: data['authorName'] ?? 'Autor Desconocido',
-
-      // [AÑADIDO] Leemos el nuevo campo desde la base de datos.
       authorPhotoUrl: data['authorPhotoUrl'],
-
-      // [AÑADIDO] Leemos el rol. Si no existe, le asignamos 'Miembro' por defecto.
       authorRole: data['authorRole'] ?? 'Miembro',
-
       content: data['content'] ?? '',
-      imageUrl: data['imageUrl'],
+      imageUrl: data['imageUrl'], // Se lee el nuevo campo
       timestamp: data['timestamp'] ?? Timestamp.now(),
       likes: data['likes'] ?? 0,
     );
