@@ -13,7 +13,8 @@ class EventService {
 
   Stream<List<EventModel>> getEventsStream() {
     return _eventsCollection
-        .orderBy('startTime', descending: false)
+        // [CAMBIO] Cambiamos 'descending' de false a true.
+        .orderBy('startTime', descending: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {

@@ -11,13 +11,11 @@ import 'package:avivamiento_app/screens/calendar/create_event_screen.dart';
 import 'package:avivamiento_app/screens/calendar/edit_event_screen.dart';
 import 'package:avivamiento_app/utils/constants.dart';
 
-// [NUEVO] Enum para representar el estado de un evento de forma clara.
 enum EventStatus { upcoming, ongoing, finished }
 
 class CalendarScreen extends ConsumerWidget {
   const CalendarScreen({super.key});
 
-  // [NUEVO] Función para determinar el estado de un evento.
   EventStatus _getEventStatus(EventModel event) {
     final now = DateTime.now();
     final startTime = event.startTime.toDate();
@@ -60,29 +58,26 @@ class CalendarScreen extends ConsumerWidget {
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                // [NUEVO] El color de la tarjeta cambia según el estado.
-                color: status == EventStatus.finished
-                    ? Colors.grey.shade300
-                    : null,
-                child: ListTile(
-                  leading: _buildStatusIndicator(status),
-                  title: Text(
-                    event.title,
-                    style: TextStyle(
-                      // [NUEVO] El texto se tacha si el evento ha terminado.
-                      decoration: status == EventStatus.finished
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                      fontWeight: FontWeight.bold,
+                // [CAMBIO] La opacidad se aplica a toda la tarjeta si ha finalizado.
+                child: Opacity(
+                  opacity: status == EventStatus.finished ? 0.6 : 1.0,
+                  child: ListTile(
+                    leading:
+                        _buildStatusIndicator(status), // Indicador de estado
+                    title: Text(
+                      event.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
+                    subtitle: Text(
+                      '${DateFormat.yMd().add_jm().format(event.startTime.toDate())}\n${event.location}',
+                    ),
+                    isThreeLine: true,
+                    trailing: canManageEvents
+                        ? _buildAdminMenu(context, ref, event)
+                        : null,
                   ),
-                  subtitle: Text(
-                    '${DateFormat.yMd().add_jm().format(event.startTime.toDate())}\n${event.location}',
-                  ),
-                  isThreeLine: true,
-                  trailing: canManageEvents
-                      ? _buildAdminMenu(context, ref, event)
-                      : null,
                 ),
               );
             },
@@ -102,24 +97,42 @@ class CalendarScreen extends ConsumerWidget {
     );
   }
 
-  // [NUEVO] Widget para el indicador visual (punto de color).
+  // [NUEVO] Widget para el indicador visual con ícono y texto.
   Widget _buildStatusIndicator(EventStatus status) {
+    IconData icon;
     Color color;
+    String text;
+
     switch (status) {
       case EventStatus.ongoing:
-        color = Colors.green;
+        icon = Icons.sync_alt;
+        color = Colors.green.shade700;
+        text = 'En Proceso';
         break;
       case EventStatus.upcoming:
-        color = Colors.blue;
+        icon = Icons.update;
+        color = Colors.blue.shade700;
+        text = 'Próximo';
         break;
       case EventStatus.finished:
-        color = Colors.grey;
+        icon = Icons.check_circle_outline;
+        color = Colors.grey.shade600;
+        text = 'Finalizado';
         break;
     }
-    return CircleAvatar(backgroundColor: color, radius: 5);
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 4),
+        Text(text, style: TextStyle(color: color, fontSize: 10)),
+      ],
+    );
   }
 
-  // [NUEVO] Menú de opciones para administradores (Editar/Eliminar).
+  // El resto de los métodos (_buildAdminMenu y _showDeleteConfirmation) no cambian.
+  // ... (pegar aquí los métodos _buildAdminMenu y _showDeleteConfirmation de la respuesta anterior)
   Widget _buildAdminMenu(
       BuildContext context, WidgetRef ref, EventModel event) {
     return PopupMenuButton<String>(
@@ -148,7 +161,6 @@ class CalendarScreen extends ConsumerWidget {
     );
   }
 
-  // [NUEVO] Diálogo de confirmación para eliminar.
   void _showDeleteConfirmation(
       BuildContext context, WidgetRef ref, EventModel event) {
     showDialog(
