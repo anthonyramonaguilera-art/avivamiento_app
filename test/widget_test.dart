@@ -27,7 +27,7 @@ void main() {
     // Devuelve un stream vacío del tipo correcto para authStateChanges
     when(
       mockAuthService.authStateChanges,
-    ).thenAnswer((_) => Stream<User?>.empty());
+    ).thenAnswer((_) => const Stream<User?>.empty());
 
     // Build our app and trigger a frame.
     await tester.pumpWidget(

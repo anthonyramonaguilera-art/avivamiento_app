@@ -86,7 +86,7 @@ class DonationMethodCard extends StatelessWidget {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

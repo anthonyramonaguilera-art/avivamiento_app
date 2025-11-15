@@ -1,16 +1,15 @@
 // lib/screens/home_screen.dart
 
+import 'package:avivamiento_app/screens/bible_hub_screen.dart';
+import 'package:avivamiento_app/screens/donations/donations_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:avivamiento_app/screens/profile/profile_screen.dart';
 import 'package:avivamiento_app/screens/feed/feed_screen.dart';
 import 'package:avivamiento_app/screens/calendar/calendar_screen.dart';
-import 'package:avivamiento_app/screens/donations/donations_screen.dart';
 import 'package:avivamiento_app/screens/radio/radio_screen.dart';
 import 'package:avivamiento_app/screens/livestreams/livestreams_screen.dart';
 import 'package:avivamiento_app/screens/conferences/conferences_screen.dart';
-import 'package:avivamiento_app/screens/bible_search_screen.dart'; 
-
 
 final selectedIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -46,20 +45,24 @@ class HomeScreen extends ConsumerWidget {
             tooltip: 'Donaciones',
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const DonationsScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const DonationsScreen()),
               );
             },
           ),
-          
+
           // === INICIO DEL CAMBIO: ACCESO A LA BIBLIA ===
           IconButton(
             // El icono ya es un libro, lo mantendremos.
-            icon: const Icon(Icons.menu_book, color: Color.fromARGB(255, 0, 47, 255)),
+            icon: const Icon(Icons.menu_book,
+                color: Color.fromARGB(255, 0, 47, 255)),
             // 1. Cambia el tooltip a "La Biblia"
             tooltip: 'La Biblia',
             onPressed: () {
               // 2. Navega a la nueva pantalla de búsqueda usando su ruta nombrada
-              Navigator.of(context).pushNamed(BibleSearchScreen.routeName);
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const BibleHubScreen()),
+              );
             },
           ),
           // === FIN DEL CAMBIO ===

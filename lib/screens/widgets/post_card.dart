@@ -133,7 +133,7 @@ class PostCard extends ConsumerWidget {
                   onPressed: canLike
                       ? () => ref
                           .read(postServiceProvider)
-                          .toggleLike(post.id, currentUser!.id, isLiked)
+                          .toggleLike(post.id, currentUser.id, isLiked)
                       : null,
                   icon: Icon(
                     isLiked ? Icons.favorite : Icons.favorite_border,
@@ -189,10 +189,12 @@ class _VideoThumbnail extends StatelessWidget {
   const _VideoThumbnail({required this.post});
 
   String? _getYoutubeVideoId(String url) {
-    if (!url.contains("youtube.com/") && !url.contains("youtu.be/"))
+    if (!url.contains("youtube.com/") && !url.contains("youtu.be/")) {
       return null;
-    if (url.contains("youtu.be/"))
+    }
+    if (url.contains("youtu.be/")) {
       return url.split("youtu.be/").last.split("?").first;
+    }
     return url.split("v=").last.split("&").first;
   }
 

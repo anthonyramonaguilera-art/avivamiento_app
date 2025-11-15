@@ -4,7 +4,7 @@ import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateEventScreen extends StatefulWidget {
-  const CreateEventScreen({Key? key}) : super(key: key);
+  const CreateEventScreen({super.key});
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -120,8 +120,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     context,
                     initialDate: _startTime ?? DateTime.now(),
                   );
-                  if (pickedTime != null)
+                  if (pickedTime != null) {
                     setState(() => _startTime = pickedTime);
+                  }
                 },
               ),
               ListTile(

@@ -84,7 +84,7 @@ class AuthService {
       return user;
     } on FirebaseAuthException catch (e) {
       print('Error de registro en Firebase: ${e.message}');
-      throw e;
+      rethrow;
     }
   }
 
@@ -100,7 +100,7 @@ class AuthService {
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
       print('Error de inicio de sesión en Firebase: ${e.message}');
-      throw e;
+      rethrow;
     }
   }
 

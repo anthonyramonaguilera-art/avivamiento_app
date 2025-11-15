@@ -44,7 +44,8 @@ class AdminPanelScreen extends ConsumerWidget {
               }).toList(),
               onChanged: (String? newValue) {
                 if (newValue != null) {
-                  dialogRef.read(selectedRoleProvider.notifier).state = newValue;
+                  dialogRef.read(selectedRoleProvider.notifier).state =
+                      newValue;
                 }
               },
             ),
@@ -54,10 +55,8 @@ class AdminPanelScreen extends ConsumerWidget {
                 onPressed: () => Navigator.of(context).pop(),
               ),
               TextButton(
-                child: const Text('Guardar'),
-                // Deshabilitamos el botón si no ha habido un cambio de rol
                 onPressed: currentSelectedRole == userToEdit.rol
-                    ? null 
+                    ? null
                     : () async {
                         Navigator.of(context).pop();
                         try {
@@ -66,11 +65,10 @@ class AdminPanelScreen extends ConsumerWidget {
                             newRole: currentSelectedRole,
                           );
                           // Mostramos una confirmación al usuario.
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Rol de ${userToEdit.nombre} cambiado a $currentSelectedRole',
-                              ),
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                              'Rol de ${userToEdit.nombre} cambiado a $currentSelectedRole',
+                            ),
                           ));
                         } catch (e) {
                           // Mostramos un error si algo falla.
@@ -81,6 +79,7 @@ class AdminPanelScreen extends ConsumerWidget {
                           );
                         }
                       },
+                child: const Text('Guardar'),
               ),
             ],
           );
@@ -98,13 +97,14 @@ class AdminPanelScreen extends ConsumerWidget {
 
     // 1. Verificación de permisos (seguridad en la UI)
     // Comprobamos si el rol del usuario actual está en la lista de roles de administrador.
-    final bool canAccessPanel = currentUser != null && 
-        [AppConstants.rolePastor, AppConstants.roleAdmin].contains(currentUser.rol);
+    final bool canAccessPanel = currentUser != null &&
+        [AppConstants.rolePastor, AppConstants.roleAdmin]
+            .contains(currentUser.rol);
 
     if (!canAccessPanel) {
       return Scaffold(
-        appBar: AppBar(title: Text('Panel de Administración')),
-        body: Center(
+        appBar: AppBar(title: const Text('Panel de Administración')),
+        body: const Center(
           child: Text('Acceso denegado. Solo para Pastor o Admin.'),
         ),
       );
@@ -113,11 +113,12 @@ class AdminPanelScreen extends ConsumerWidget {
     // 2. Mostrar la lista de usuarios
     return Scaffold(
       appBar: AppBar(
-        title: Text('Administración de Roles'),
+        title: const Text('Administración de Roles'),
       ),
       body: allUsersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error al cargar usuarios: $err')),
+        error: (err, stack) =>
+            Center(child: Text('Error al cargar usuarios: $err')),
         data: (users) {
           return ListView.builder(
             itemCount: users.length,
@@ -130,20 +131,24 @@ class AdminPanelScreen extends ConsumerWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundImage: user.fotoUrl != null && user.fotoUrl!.isNotEmpty
-                      ? NetworkImage(user.fotoUrl!)
-                      : null,
+                    backgroundImage:
+                        user.fotoUrl != null && user.fotoUrl!.isNotEmpty
+                            ? NetworkImage(user.fotoUrl!)
+                            : null,
                     child: user.fotoUrl == null || user.fotoUrl!.isEmpty
-                      ? const Icon(Icons.person)
-                      : null,
+                        ? const Icon(Icons.person)
+                        : null,
                   ),
                   title: Text(user.nombre),
                   subtitle: Text('Rol: ${user.rol}'),
                   trailing: isCurrentUser
-                      ? const Chip(label: Text('Tú'), backgroundColor: Colors.transparent)
+                      ? const Chip(
+                          label: Text('Tú'),
+                          backgroundColor: Colors.transparent)
                       : IconButton(
                           icon: const Icon(Icons.edit, color: Colors.grey),
-                          onPressed: () => _showChangeRoleDialog(context, ref, user),
+                          onPressed: () =>
+                              _showChangeRoleDialog(context, ref, user),
                         ),
                 ),
               );

@@ -1,11 +1,10 @@
 // lib/screens/bible_search_screen.dart
 import 'package:flutter/material.dart';
-import '../services/bible_service.dart'; // Importa el servicio que contiene fetchPassageContent
+import '../services/bible_service.dart';
 
-/// Pantalla para la Lectura y Búsqueda de la Biblia RVR09.
 class BibleSearchScreen extends StatefulWidget {
-  // Usamos una ruta estática para facilitar la navegación desde main.dart
-  static const routeName = '/bible-search';
+  static const String routeName = '/bible-search';
+
   const BibleSearchScreen({super.key});
 
   @override
@@ -14,145 +13,248 @@ class BibleSearchScreen extends StatefulWidget {
 
 class _BibleSearchScreenState extends State<BibleSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _bibleContent = 'Ingresa una referencia (ej: JHN.3.16) o una frase (ej: amor incondicional) para empezar.';
+  final BibleService _bibleService = BibleService();
+  String _bibleContent =
+      'Ingresa una referencia (ej: Juan 3:16) o una palabra clave para buscar.';
   bool _isLoading = false;
+  List<String> _suggestions = [];
+  bool _showSuggestions = false;
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    // Carga un versículo por defecto (Juan 3:16) al iniciar
-    _searchController.text = 'JHN.3.16';
-    _fetchContent();
+    _loadInitialContent();
   }
 
-  Future<void> _fetchContent() async {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) {
+  Future<void> _loadInitialContent() async {
+    // Cargar un versículo por defecto al iniciar
+    _fetchContent('Juan 3:16');
+  }
+
+  Future<void> _fetchContent(String query) async {
+    if (query.trim().isEmpty) {
       setState(() {
-        _bibleContent = 'Por favor, ingresa una referencia o una frase de búsqueda.';
+        _bibleContent =
+            'Por favor, ingresa una referencia o una palabra clave.';
       });
       return;
     }
 
     setState(() {
-      _isLoading = true; // Activa el indicador de carga
-      _bibleContent = 'Cargando contenido...';
+      _isLoading = true;
+      _showSuggestions = false;
+      _bibleContent = 'Buscando...';
     });
 
     try {
-      final content = await fetchPassageContent(query);
+      // Use the smarter parser that accepts human formats (e.g. "Juan 3:16")
+      final content = await _bibleService.searchOrFetch(query);
       setState(() {
         _bibleContent = content;
       });
     } catch (e) {
       setState(() {
-        _bibleContent = 'Ocurrió un error inesperado: $e';
+        _bibleContent = 'Error al buscar "$query": $e';
       });
     } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    if (query.length > 2) {
+      // Ejemplo de sugerencias (puedes personalizar según tus necesidades)
       setState(() {
-        _isLoading = false; // Desactiva el indicador de carga
+        _suggestions = [
+          'Génesis 1:1',
+          'Salmos 23:1',
+          'Mateo 28:19',
+          'Juan 14:6',
+          'Romanos 8:28',
+          '1 Corintios 13',
+          'Apocalipsis 21:4'
+        ]
+            .where((suggestion) =>
+                suggestion.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+        _showSuggestions = _suggestions.isNotEmpty;
+      });
+    } else {
+      setState(() {
+        _showSuggestions = false;
       });
     }
   }
-  
+
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Lector Bíblico (RVR09)',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 4,
-        // Agregamos un botón de acción en el AppBar que podría usarse 
-        // para un futuro selector de libros. Por ahora, solo es estético.
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu_book),
-            tooltip: 'Ver Libros',
-            onPressed: () {
-              // Aquí se agregaría la lógica para mostrar todos los libros de la Biblia.
-              // Por ahora, solo muestra un mensaje.
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Funcionalidad de Navegación por Libros (Próximamente)')),
-              );
-            },
-          ),
-        ],
+        title:
+            const Text('Biblia', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Theme.of(context).primaryColor,
+        elevation: 1,
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: GestureDetector(
+        onTap: () {
+          // Ocultar el teclado cuando se toca fuera del campo de búsqueda
+          FocusScope.of(context).unfocus();
+          setState(() {
+            _showSuggestions = false;
+          });
+        },
         child: Column(
-          children: <Widget>[
-            // 1. Campo de Búsqueda y Botón
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextField(
+          children: [
+            // Barra de búsqueda
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              color: Theme.of(context).primaryColor.withOpacity(0.05),
+              child: Column(
+                children: [
+                  // Campo de búsqueda
+                  TextField(
                     controller: _searchController,
+                    focusNode: _searchFocusNode,
                     decoration: InputDecoration(
-                      hintText: 'Ej: JHN.3.16 (Pasaje) o amor incondicional (Texto)',
-                      labelText: 'Buscar en la Biblia',
-                      prefixIcon: const Icon(Icons.search),
-                      // El estilo de border se hereda de tu main.dart.
+                      hintText: 'Buscar en la Biblia...',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0, horizontal: 20),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 2.0,
+                        ),
+                      ),
                     ),
-                    onSubmitted: (_) => _fetchContent(), 
+                    onChanged: _onSearchChanged,
+                    onSubmitted: (value) {
+                      _fetchContent(value);
+                      _searchFocusNode.unfocus();
+                    },
+                    onTap: () {
+                      setState(() {
+                        _showSuggestions = _suggestions.isNotEmpty &&
+                            _searchController.text.isNotEmpty;
+                      });
+                    },
                   ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  height: 60, // Ajusta la altura
-                  child: ElevatedButton.icon( // Usamos ElevatedButton.icon para mejor visibilidad
-                    onPressed: _isLoading ? null : _fetchContent,
-                    icon: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Icon(Icons.search, size: 20),
-                    label: const Text('Buscar', style: TextStyle(fontSize: 16)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
 
-            // 2. Área de Contenido de la Biblia
-            Expanded(
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20.0),
-                  child: SelectableText( 
-                    _bibleContent,
-                    textAlign: TextAlign.start,
-                    style: textTheme.bodyLarge?.copyWith(
-                      fontSize: 17,
-                      height: 1.5,
-                      color: Colors.grey.shade800,
-                      fontFamily: 'Roboto',
-                    )
-                  ),
-                ),
+                  // Sugerencias de búsqueda
+                  if (_showSuggestions && _suggestions.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(top: 8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10.0,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _suggestions.length,
+                        itemBuilder: (context, index) {
+                          return ListTile(
+                            title: Text(
+                              _suggestions[index],
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            leading: const Icon(Icons.bookmark_border,
+                                size: 20, color: Colors.grey),
+                            onTap: () {
+                              _searchController.text = _suggestions[index];
+                              _fetchContent(_suggestions[index]);
+                              setState(() {
+                                _showSuggestions = false;
+                              });
+                              _searchFocusNode.unfocus();
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                ],
               ),
+            ),
+
+            // Contenido bíblico
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.blue),
+                            strokeWidth: 3.0,
+                          ),
+                          SizedBox(height: 16),
+                          Text('Buscando en la Biblia...',
+                              style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!_isLoading && _searchController.text.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Text(
+                                _searchController.text,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                          Text(
+                            _bibleContent,
+                            style: const TextStyle(
+                              fontSize: 16.0,
+                              height: 1.8,
+                              color: Colors.black87,
+                            ),
+                            textAlign: TextAlign.justify,
+                          ),
+                        ],
+                      ),
+                    ),
             ),
           ],
         ),
