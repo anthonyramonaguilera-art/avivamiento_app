@@ -9,10 +9,12 @@ class CreateConferenceScreen extends ConsumerStatefulWidget {
   const CreateConferenceScreen({super.key});
 
   @override
-  ConsumerState<CreateConferenceScreen> createState() => _CreateConferenceScreenState();
+  ConsumerState<CreateConferenceScreen> createState() =>
+      _CreateConferenceScreenState();
 }
 
-class _CreateConferenceScreenState extends ConsumerState<CreateConferenceScreen> {
+class _CreateConferenceScreenState
+    extends ConsumerState<CreateConferenceScreen> {
   final _formKey = GlobalKey<FormState>();
   final _topicController = TextEditingController();
   final _roomNameController = TextEditingController();
@@ -34,7 +36,9 @@ class _CreateConferenceScreenState extends ConsumerState<CreateConferenceScreen>
       // [NUEVO] Validación adicional: si la sala es privada, al menos un rol debe ser seleccionado.
       if (_accessType == 'privada' && _selectedRoles.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Para una sala privada, debes seleccionar al menos un rol permitido.')),
+          const SnackBar(
+              content: Text(
+                  'Para una sala privada, debes seleccionar al menos un rol permitido.')),
         );
         return; // Detenemos el envío del formulario.
       }
@@ -54,7 +58,8 @@ class _CreateConferenceScreenState extends ConsumerState<CreateConferenceScreen>
         if (mounted) {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sala de conferencia creada con éxito')),
+            const SnackBar(
+                content: Text('Sala de conferencia creada con éxito')),
           );
         }
       } catch (e) {
@@ -97,8 +102,10 @@ class _CreateConferenceScreenState extends ConsumerState<CreateConferenceScreen>
             children: [
               TextFormField(
                 controller: _topicController,
-                decoration: const InputDecoration(labelText: 'Tema de la Reunión'),
-                validator: (value) => value!.trim().isEmpty ? 'El tema es requerido' : null,
+                decoration:
+                    const InputDecoration(labelText: 'Tema de la Reunión'),
+                validator: (value) =>
+                    value!.trim().isEmpty ? 'El tema es requerido' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -108,18 +115,26 @@ class _CreateConferenceScreenState extends ConsumerState<CreateConferenceScreen>
                   hintText: 'Ej: ReunionLideres2025',
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return 'El nombre de la sala es requerido';
-                  if (value.contains(' ')) return 'El nombre no puede contener espacios';
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El nombre de la sala es requerido';
+                  }
+                  if (value.contains(' ')) {
+                    return 'El nombre no puede contener espacios';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
-                value: _accessType,
+                initialValue: _accessType,
                 decoration: const InputDecoration(labelText: 'Tipo de Acceso'),
                 items: const [
-                  DropdownMenuItem(value: 'publica', child: Text('Pública - Abierta a todos')),
-                  DropdownMenuItem(value: 'privada', child: Text('Privada - Solo por roles')),
+                  DropdownMenuItem(
+                      value: 'publica',
+                      child: Text('Pública - Abierta a todos')),
+                  DropdownMenuItem(
+                      value: 'privada',
+                      child: Text('Privada - Solo por roles')),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -134,7 +149,8 @@ class _CreateConferenceScreenState extends ConsumerState<CreateConferenceScreen>
               // Solo aparece si el tipo de acceso es 'privada'
               if (_accessType == 'privada') ...[
                 const SizedBox(height: 24),
-                Text('¿Quiénes pueden entrar?', style: Theme.of(context).textTheme.titleMedium),
+                Text('¿Quiénes pueden entrar?',
+                    style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 // Usamos un Wrap para que los checkboxes se acomoden si no caben en una línea.
                 Wrap(

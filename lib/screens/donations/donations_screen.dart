@@ -35,9 +35,9 @@ class DonationsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Tarjeta para Pago Móvil (con datos de ejemplo)
-          DonationMethodCard(
+          const DonationMethodCard(
             title: 'Pago Móvil',
-            details: const {
+            details: {
               'Banco': '0102 - Banco de Venezuela',
               'Teléfono': '0414-1234567',
               'RIF': 'J-12345678-9',
@@ -48,9 +48,9 @@ class DonationsScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Tarjeta para Transferencia Bancaria (con datos de ejemplo)
-          DonationMethodCard(
+          const DonationMethodCard(
             title: 'Transferencia Bancaria',
-            details: const {
+            details: {
               'Banco': 'Bancamiga',
               'Titular': 'Centro Internacional Avivamiento',
               'Cuenta': '0171-0012-3456-7890-1234',
@@ -62,9 +62,9 @@ class DonationsScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Tarjeta para PayPal (con datos de ejemplo)
-          DonationMethodCard(
+          const DonationMethodCard(
             title: 'PayPal',
-            details: const {'Correo': 'donaciones@avivamiento.org'},
+            details: {'Correo': 'donaciones@avivamiento.org'},
             icon: Icons.paypal,
           ),
         ],

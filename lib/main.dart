@@ -1,48 +1,50 @@
-// lib/main.dart
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 import 'package:avivamiento_app/firebase_options.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:avivamiento_app/screens/splash_screen.dart';
-import 'package:avivamiento_app/screens/bible_search_screen.dart'; // <-- 1. IMPORTA LA NUEVA PANTALLA
+import 'package:avivamiento_app/screens/bible_search_screen.dart';
 
 void main() async {
   // Asegura que los bindings de Flutter estén inicializados.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Carga las variables de entorno del archivo .env ANTES de usarlas.
+  // Carga las variables de entorno
   await dotenv.load(fileName: ".env");
 
-  // 3. Inicializa Firebase.
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Inicializa Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  final container = ProviderContainer();
-
-  // Inicializa las notificaciones (solo si no estamos en la web).
-  if (!kIsWeb) {
-    await container.read(notificationServiceProvider).initNotifications();
-  }
-
-  // Ejecuta la app dentro de un ProviderScope para que Riverpod funcione.
-  runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
+  // Ejecuta la app
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
-/// El widget raíz de la aplicación.
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Inicialización de notificaciones
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(notificationServiceProvider).initNotifications();
+      });
+    }
+
     return MaterialApp(
       title: 'Avivamiento App',
       debugShowCheckedModeBanner: false,
 
-      // --- TEMA GLOBAL DE LA APLICACIÓN ---
+      // Tema de la aplicación
       theme: ThemeData(
         primarySwatch: Colors.blue,
         colorScheme: ColorScheme.fromSeed(
@@ -92,14 +94,13 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // --- FIN DEL TEMA ---
-      
-      // 2. REGISTRA LA RUTA DE LA NUEVA PANTALLA
+      // Rutas de la aplicación
       routes: {
-        BibleSearchScreen.routeName: (context) => const BibleSearchScreen(),
+        '/bible-search': (context) => const BibleSearchScreen(),
+        // Agrega aquí más rutas según sea necesario
       },
-      
-      // La ruta inicial sigue siendo tu SplashScreen
+
+      // Pantalla inicial
       home: const SplashScreen(),
     );
   }
