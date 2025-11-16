@@ -1,13 +1,12 @@
+// lib/providers/audio_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:audio_service/audio_service.dart';
 
-/// Provider para la instancia de AudioPlayer
-final audioPlayerProvider = Provider<AudioPlayer>((ref) {
-  return AudioPlayer();
-});
-
-/// Provider para el estado del reproductor
-final playerStateProvider = StreamProvider<PlayerState>((ref) {
-  final audioPlayer = ref.watch(audioPlayerProvider);
-  return audioPlayer.onPlayerStateChanged;
+/// Este Provider es una plantilla.
+/// Será "sobrescrito" (overridden) en 'main.dart' con la instancia
+/// real del AudioHandler una vez que se inicialice.
+///
+/// Los widgets usarán este provider para acceder al handler.
+final audioHandlerProvider = Provider<AudioHandler>((ref) {
+  throw UnimplementedError('AudioHandler no inicializado');
 });

@@ -2,10 +2,9 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// [ELIMINADO] Ya no importamos FirebaseStorage aquí porque no se usa para el PostService
-// import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:avivamiento_app/services/bible_service.dart';
 import 'package:avivamiento_app/services/auth_service.dart';
 import 'package:avivamiento_app/services/user_service.dart';
 import 'package:avivamiento_app/services/post_service.dart';
@@ -58,4 +57,8 @@ final livestreamServiceProvider = Provider<LivestreamService>((ref) {
 
 final conferenceServiceProvider = Provider<ConferenceService>((ref) {
   return ConferenceService(ref.watch(firestoreProvider));
+});
+
+final bibleServiceProvider = Provider<BibleService>((ref) {
+  return BibleService();
 });
