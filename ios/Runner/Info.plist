@@ -49,5 +49,9 @@
 <string>Necesitamos acceso a la cámara para que puedas participar en las videoconferencias.</string>
 <key>NSMicrophoneUsageDescription</key>
 <string>Necesitamos acceso al micrófono para que puedan escucharte en las videoconferencias.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+	    <string>audio</string>
+	</array>
 </dict>
 </plist>

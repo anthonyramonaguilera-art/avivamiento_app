@@ -1,242 +1,310 @@
 // lib/screens/bible_hub_screen.dart
 import 'package:flutter/material.dart';
-import '../services/bible_service.dart';
-import 'bible_search_screen.dart';
-import 'bible_books_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:avivamiento_app/models/bible_book_model.dart';
+import 'package:avivamiento_app/providers/services_provider.dart';
+import 'package:avivamiento_app/screens/bible_chapter_screen.dart';
+import 'package:avivamiento_app/screens/bible_reader_screen.dart';
 
-/// BibleHubScreen
-///
-/// Pantalla principal de la sección Biblia con navegación de libros y búsqueda
-/// integrada. Implementa una búsqueda inline (minimalista) que muestra
-/// sugerencias y resultados sin navegar a una pantalla separada.
-class BibleHubScreen extends StatefulWidget {
+// --- State Management (Providers) ---
+
+/// Provider que almacena la consulta de búsqueda actual.
+/// La UI reaccionará a los cambios en este estado.
+final bibleSearchQueryProvider = StateProvider<String>((_) => '');
+
+/// Provider que carga la lista de libros (AT/NT) una sola vez.
+final bibleBooksProvider =
+    FutureProvider<Map<String, List<BibleBookModel>>>((ref) async {
+  // Usamos el provider de servicio que definiremos en services_provider.dart
+  final bibleService = ref.watch(bibleServiceProvider);
+  final books = await bibleService.fetchBooks();
+  final Map<String, List<BibleBookModel>> grouped = {
+    'Antiguo Testamento': [],
+    'Nuevo Testamento': [],
+  };
+  for (var book in books) {
+    if (book.testament == 'OT') {
+      grouped['Antiguo Testamento']!.add(book);
+    } else if (book.testament == 'NT') {
+      grouped['Nuevo Testamento']!.add(book);
+    }
+  }
+  return grouped;
+});
+
+/// Provider que ejecuta la búsqueda.
+/// Es un `.family` para tomar la consulta como parámetro.
+/// Es `.autoDispose` para cancelar la búsqueda si el usuario sale.
+final bibleSearchProvider =
+    FutureProvider.autoDispose.family<String, String>((ref, query) async {
+  if (query.trim().isEmpty) {
+    return 'Inicia una búsqueda.';
+  }
+  final bibleService = ref.watch(bibleServiceProvider);
+  return bibleService.searchOrFetch(query);
+});
+
+// --- UI (Pantalla Principal) ---
+
+class BibleHubScreen extends ConsumerStatefulWidget {
   const BibleHubScreen({super.key});
 
   @override
-  State<BibleHubScreen> createState() => _BibleHubScreenState();
+  ConsumerState<BibleHubScreen> createState() => _BibleHubScreenState();
 }
 
-class _BibleHubScreenState extends State<BibleHubScreen>
-    with SingleTickerProviderStateMixin {
-  final BibleService _bibleService = BibleService();
-  final TextEditingController _inlineController = TextEditingController();
-  final FocusNode _inlineFocus = FocusNode();
-  List<String> _suggestions = [];
-  bool _showInline = false;
-  TabController? _tabController;
+class _BibleHubScreenState extends ConsumerState<BibleHubScreen> {
+  final _searchController = TextEditingController();
+  final _searchFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    // Limpiamos la búsqueda al entrar, si es que había algo.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(bibleSearchQueryProvider.notifier).state = '';
+      }
+    });
   }
 
   @override
   void dispose() {
-    _inlineController.dispose();
-    _inlineFocus.dispose();
-    _tabController?.dispose();
+    _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _onInlineChanged(String q) async {
-    if (q.trim().isEmpty) {
-      setState(() => _suggestions = []);
-      return;
-    }
-    try {
-      final s = await _bibleService.getBookSuggestions(q, limit: 6);
-      setState(() {
-        _suggestions = s;
-      });
-    } catch (_) {
-      setState(() {
-        _suggestions = [];
-      });
-    }
+  void _onSearchSubmitted(String query) {
+    ref.read(bibleSearchQueryProvider.notifier).state = query;
+    _searchFocus.unfocus();
   }
 
-  Future<void> _submitInline(String q) async {
-    if (q.trim().isEmpty) return;
-    // Cierra teclado
-    _inlineFocus.unfocus();
+  @override
+  Widget build(BuildContext context) {
+    // Escuchamos el estado de la consulta
+    final searchQuery = ref.watch(bibleSearchQueryProvider);
 
-    // Muestra results en modal bottom sheet para comportamiento integrado
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-        return Padding(
-          padding: EdgeInsets.only(bottom: bottomInset),
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            minChildSize: 0.3,
-            maxChildSize: 0.95,
-            builder: (context, controller) {
-              return Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Santa Biblia (RVR09)'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0)
+                .copyWith(bottom: 8.0),
+            child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocus,
+              decoration: InputDecoration(
+                hintText: 'Buscar (ej. Juan 3:16 o "amor")',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchSubmitted('');
+                        },
+                      )
+                    : null,
+                // Ajustes de padding para un look más moderno
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                  borderSide: BorderSide.none,
                 ),
-                child: FutureBuilder<String>(
-                  future: _bibleService.searchOrFetch(q),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          children: [
-                            Text('Error: ${snapshot.error}'),
-                          ],
-                        ),
-                      );
-                    }
-                    final content =
-                        snapshot.data ?? 'No se encontraron resultados.';
-                    return SingleChildScrollView(
-                      controller: controller,
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Resultados',
-                                  style:
-                                      Theme.of(context).textTheme.titleLarge),
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () => Navigator.of(context).pop(),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(q,
-                              style: const TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 12),
-                          Text(content, textAlign: TextAlign.justify),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
+                filled: true,
+                fillColor: Theme.of(context).scaffoldBackgroundColor,
+              ),
+              onSubmitted: _onSearchSubmitted,
+            ),
           ),
+        ),
+      ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: searchQuery.isEmpty
+            // Estado 1: Navegación (búsqueda vacía)
+            ? const _BibleBooksList(key: ValueKey('books_list'))
+            // Estado 2: Resultados (búsqueda activa)
+            : _BibleSearchResults(
+                key: ValueKey(searchQuery), // La clave cambia con la consulta
+                query: searchQuery,
+              ),
+      ),
+    );
+  }
+}
+
+// --- Helper Widget: Lista de Libros (Estado por Defecto) ---
+class _BibleBooksList extends ConsumerWidget {
+  const _BibleBooksList({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final booksAsync = ref.watch(bibleBooksProvider);
+
+    return booksAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) =>
+          Center(child: Text('Error al cargar libros: $err')),
+      data: (groupedBooks) {
+        final otBooks = groupedBooks['Antiguo Testamento']!;
+        final ntBooks = groupedBooks['Nuevo Testamento']!;
+
+        return ListView(
+          padding: const EdgeInsets.all(8.0),
+          children: [
+            _buildBookSection(context, 'Antiguo Testamento', otBooks),
+            _buildBookSection(context, 'Nuevo Testamento', ntBooks),
+          ],
         );
       },
     );
   }
 
+  Widget _buildBookSection(
+    BuildContext context,
+    String title,
+    List<BibleBookModel> books,
+  ) {
+    return ExpansionTile(
+      title: Text(title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+      initiallyExpanded: title == 'Nuevo Testamento',
+      children: books.map((book) {
+        return ListTile(
+          title: Text(book.name),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                // Navega a la pantalla de capítulos
+                builder: (context) => BibleChapterScreen(book: book),
+              ),
+            );
+          },
+        );
+      }).toList(),
+    );
+  }
+}
+
+// --- Helper Widget: Resultados de Búsqueda (Estado de Búsqueda) ---
+class _BibleSearchResults extends ConsumerStatefulWidget {
+  final String query;
+  const _BibleSearchResults({super.key, required this.query});
+
+  @override
+  ConsumerState<_BibleSearchResults> createState() =>
+      _BibleSearchResultsState();
+}
+
+class _BibleSearchResultsState extends ConsumerState<_BibleSearchResults> {
+  String? _chapterId;
+  String? _bookName;
+  String? _chapterNumber;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfVerse();
+  }
+
+  /// Verifica si la consulta es un versículo para mostrar el botón "Ver Capítulo".
+  Future<void> _checkIfVerse() async {
+    // No podemos usar ref.watch() en initState. Usamos ref.read() una vez.
+    final bibleService = ref.read(bibleServiceProvider);
+    // Usamos el parser del servicio
+    final apiRef = await bibleService.parseToApiReference(widget.query);
+
+    if (apiRef != null && apiRef.countMatches('.') == 2) {
+      // Es una referencia de versículo, ej: "JHN.3.16"
+      final parts = apiRef.split('.');
+      final bookId = parts[0];
+      final chapNum = parts[1];
+
+      // Necesitamos el nombre del libro (ej. "Juan")
+      // `ref.read` aquí es seguro porque el provider ya debe estar resuelto
+      // por el widget _BibleBooksList que se carga al inicio.
+      final books = await ref.read(bibleBooksProvider.future);
+      final allBooks = [
+        ...books['Antiguo Testamento']!,
+        ...books['Nuevo Testamento']!
+      ];
+      final book = allBooks.firstWhere((b) => b.id == bookId,
+          orElse: () =>
+              const BibleBookModel(id: '', name: 'Libro', testament: ''));
+
+      if (mounted) {
+        setState(() {
+          _chapterId = '$bookId.$chapNum'; // "JHN.3"
+          _bookName = book.name; // "Juan"
+          _chapterNumber = chapNum; // "3"
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Santa Biblia (RVR09)'),
-          actions: [
-            // Minimal search icon that expands an inline search field
-            IconButton(
-              tooltip: 'Buscar',
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                setState(() {
-                  _showInline = !_showInline;
-                  if (_showInline) {
-                    _inlineFocus.requestFocus();
-                    _tabController?.animateTo(1);
-                  }
-                });
-              },
-            ),
-          ],
-          bottom: PreferredSize(
-            preferredSize: Size.fromHeight(_showInline ? 120.0 : 48.0),
-            child: Column(
-              children: [
-                TabBar(
-                  controller: _tabController,
-                  tabs: const [
-                    Tab(icon: Icon(Icons.menu_book), text: 'Navegar'),
-                    Tab(icon: Icon(Icons.search), text: 'Buscar'),
-                  ],
-                ),
-                if (_showInline)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12.0, vertical: 8.0),
-                    child: Material(
-                      color: Colors.white,
-                      elevation: 2,
-                      borderRadius: BorderRadius.circular(30),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.search, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _inlineController,
-                                focusNode: _inlineFocus,
-                                textInputAction: TextInputAction.search,
-                                onChanged: _onInlineChanged,
-                                onSubmitted: _submitInline,
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: 'Buscar libro, capítulo o texto...',
-                                ),
-                              ),
-                            ),
-                          ],
+    // Ahora SÍ podemos usar ref.watch()
+    final contentAsync = ref.watch(bibleSearchProvider(widget.query));
+
+    return contentAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error en la búsqueda: $err')),
+      data: (content) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- CUMPLE TU USER STORY #3 ---
+              // Si detectamos que era un versículo, mostramos el botón.
+              if (_chapterId != null)
+                ListTile(
+                  leading: const Icon(Icons.menu_book),
+                  title: Text(
+                      'Ver ${_bookName ?? 'Capítulo'} ${_chapterNumber ?? ''} completo'),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                  onTap: () {
+                    if (_chapterId == null ||
+                        _bookName == null ||
+                        _chapterNumber == null) {
+                      return;
+                    }
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => BibleReaderScreen(
+                          chapterId: _chapterId!,
+                          bookName: _bookName!,
+                          chapterNumber: _chapterNumber!,
                         ),
                       ),
-                    ),
-                  ),
-                if (_showInline && _suggestions.isNotEmpty)
-                  SizedBox(
-                    height: 80,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _suggestions.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) {
-                        final s = _suggestions[index];
-                        return ActionChip(
-                          label: Text(s),
-                          onPressed: () {
-                            _inlineController.text = s;
-                            _submitInline(s);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
+                    );
+                  },
+                ),
+              const Divider(),
+              // ---
+              SelectableText(
+                content,
+                style: const TextStyle(fontSize: 17, height: 1.6),
+                textAlign: TextAlign.justify,
+              ),
+            ],
           ),
-        ),
-        body: TabBarView(
-          controller: _tabController,
-          children: const [
-            // Pestaña 1: La nueva lista de libros
-            BibleBooksScreen(),
-
-            // Pestaña 2: Tu pantalla de búsqueda reutilizada
-            BibleSearchScreen(),
-          ],
-        ),
-      ),
+        );
+      },
     );
+  }
+}
+
+/// Extensión de helper para contar ocurrencias
+extension StringCount on String {
+  int countMatches(String char) {
+    return split(char).length - 1;
   }
 }
