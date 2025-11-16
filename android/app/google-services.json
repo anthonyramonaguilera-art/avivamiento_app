@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1004105871009",
+    "project_id": "avivamiento-app-ef433",
+    "storage_bucket": "avivamiento-app-ef433.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1004105871009:android:5189aa58c009d9d081cae0",
+        "android_client_info": {
+          "package_name": "com.example.avivamiento_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1004105871009-fhono8b47p8o65rlkjhjb8a0r27f6iid.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.avivamiento_app",
+            "certificate_hash": "4a5223a89ed4b18ee83da7a1ed06eb211dbfa2de"
+          }
+        },
+        {
+          "client_id": "1004105871009-nebkbsje1tp1vagblffus9l0q63864u0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZhU77JHNhEU0vhynsyteG54wYppp1G48"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1004105871009-nebkbsje1tp1vagblffus9l0q63864u0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1004105871009-7skmjra04tonk8ep6erkgqqd5sq95c97.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.avivamientoApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
