@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audio_service/audio_service.dart'; // <-- ¡NUEVA IMPORTACIÓN!
-import 'package:lottie/lottie.dart';
+// Removed Lottie dependency — using a custom lightweight visualizer instead
 import 'package:avivamiento_app/providers/user_data_provider.dart';
 import 'package:avivamiento_app/providers/audio_provider.dart'; // <-- ¡Este es nuestro nuevo provider!
 import 'package:avivamiento_app/providers/chat_provider.dart';
@@ -61,14 +61,8 @@ class RadioScreen extends ConsumerWidget {
                     // El Lottie ahora se anima basado en el stream
                     return Column(
                       children: [
-                        SizedBox(
-                          height: 60,
-                          width: 150,
-                          child: Lottie.asset(
-                            'assets/animations/sound_wave.json',
-                            animate: isPlaying,
-                          ),
-                        ),
+                        // Lightweight, custom visualizer replacing Lottie animation
+                        PlayVisualizer(isPlaying: isPlaying),
                         const SizedBox(height: 10),
                         const Text(
                           'Radio Avivamiento En Vivo',
@@ -150,6 +144,117 @@ class RadioScreen extends ConsumerWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+// A small, modern and minimal audio visualizer used instead of Lottie.
+class PlayVisualizer extends StatefulWidget {
+  final bool isPlaying;
+  const PlayVisualizer({super.key, required this.isPlaying});
+
+  @override
+  State<PlayVisualizer> createState() => _PlayVisualizerState();
+}
+
+class _PlayVisualizerState extends State<PlayVisualizer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _barOne;
+  late final Animation<double> _barTwo;
+  late final Animation<double> _barThree;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _barOne = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.0, 1.0, curve: Curves.easeInOut)),
+    );
+    _barTwo = Tween<double>(begin: 0.4, end: 0.9).animate(
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.15, 1.0, curve: Curves.easeInOut)),
+    );
+    _barThree = Tween<double>(begin: 0.35, end: 0.95).animate(
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.3, 1.0, curve: Curves.easeInOut)),
+    );
+
+    if (widget.isPlaying) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PlayVisualizer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.isPlaying && _controller.isAnimating) {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const maxBarHeight = 40.0;
+    const barWidth = 8.0;
+    final color = Theme.of(context).colorScheme.primary;
+
+    return SizedBox(
+      height: 60,
+      width: 150,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _buildBar(maxBarHeight * _barOne.value, barWidth, color),
+              _buildBar(maxBarHeight * _barTwo.value, barWidth,
+                  color.withOpacity(0.9)),
+              _buildBar(maxBarHeight * _barThree.value, barWidth,
+                  color.withOpacity(0.75)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBar(double height, double width, Color color) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.25),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
       ),
     );
   }

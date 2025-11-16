@@ -37,6 +37,8 @@ Future<void> main() async {
   // - try/catch para capturar errores nativos
   AudioHandler audioHandler;
   try {
+    // Damos más tiempo a la inicialización del servicio de audio en
+    // dispositivos más lentos o cuando hay demoras nativas.
     audioHandler = await AudioService.init(
       builder: () => RadioAudioHandler(),
       config: const AudioServiceConfig(
@@ -44,7 +46,7 @@ Future<void> main() async {
         androidNotificationChannelName: 'Radio Avivamiento',
         androidNotificationOngoing: true,
       ),
-    ).timeout(const Duration(seconds: 6));
+    ).timeout(const Duration(seconds: 20));
   } catch (e, st) {
     if (kDebugMode) {
       // ignore: avoid_print
@@ -52,6 +54,9 @@ Future<void> main() async {
       // ignore: avoid_print
       print(st);
     }
+    // Si la inicialización falla seguimos con un handler no operativo
+    // para no bloquear la UI. En la mayor parte de los casos el problema
+    // se soluciona aumentando el timeout.
     audioHandler = NoOpAudioHandler();
   }
   // --- FIN DE LA INICIALIZACIÓN DEL AUDIO ---
