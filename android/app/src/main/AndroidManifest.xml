@@ -14,12 +14,13 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
+    
         android:label="Avivamiento App"
         android:icon="@mipmap/ic_launcher"
         tools:replace="android:label">
 
         <activity
-            android:name="com.example.avivamiento_app.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"

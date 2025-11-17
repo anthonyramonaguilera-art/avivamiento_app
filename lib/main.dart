@@ -1,3 +1,4 @@
+// lib/main.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -10,9 +11,6 @@ import 'package:avivamiento_app/services/audio_handler.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:avivamiento_app/providers/audio_provider.dart';
 
-/// Un `AudioHandler` de respaldo que no hace nada. Se usa cuando la
-/// inicialización real falla o tarda demasiado, para evitar bloquear
-/// el arranque de la UI.
 class NoOpAudioHandler extends BaseAudioHandler {
   @override
   Future<void> play() async {}
@@ -47,6 +45,9 @@ Future<void> main() async {
         androidNotificationOngoing: true,
       ),
     ).timeout(const Duration(seconds: 20));
+
+    // AÑADIDO: Línea de diagnóstico para confirmar la inicialización
+    print('!!!!!!!!!!!!!! [MAIN] AudioService.init SUCCEEDED !!!!!!!!!!!!!!');
   } catch (e, st) {
     if (kDebugMode) {
       // ignore: avoid_print
@@ -57,8 +58,12 @@ Future<void> main() async {
     // Si la inicialización falla seguimos con un handler no operativo
     // para no bloquear la UI. En la mayor parte de los casos el problema
     // se soluciona aumentando el timeout.
+    // AÑADIDO: Línea de diagnóstico indicando que se usará el handler de fallback
+    print('!!!!!!!!!!!!!! [MAIN] FALLBACK TO NoOpAudioHandler !!!!!!!!!!!!!!');
+
     audioHandler = NoOpAudioHandler();
   }
+
   // --- FIN DE LA INICIALIZACIÓN DEL AUDIO ---
 
   // Inicializa Firebase (seguimos usando el fallback try/catch para mayor
@@ -66,6 +71,9 @@ Future<void> main() async {
   try {
     await Firebase.initializeApp();
   } catch (e) {
+    // Si falla la primera, intenta de nuevo.
+    // Aunque si `firebase_options.dart` está bien generado,
+    // la primera llamada debería bastar.
     await Firebase.initializeApp();
   }
 

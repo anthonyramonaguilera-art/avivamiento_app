@@ -40,7 +40,11 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
-  Future<void> play() => _player.play();
+  Future<void> play() {
+    // AÑADIDO: diagnóstico para saber cuándo se llama a play()
+    print('!!!!!!!!!!!!!! [RadioAudioHandler] play() CALLED !!!!!!!!!!!!!!');
+    return _player.play();
+  }
 
   @override
   Future<void> pause() => _player.pause();
