@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1004105871009-4pkkod8opbd8tseu683p7bctt62jje2d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.avivamiento_app",
+            "certificate_hash": "565394fcbf934f69565caf7b45df4964d020c7cc"
+          }
+        },
+        {
           "client_id": "1004105871009-fhono8b47p8o65rlkjhjb8a0r27f6iid.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
