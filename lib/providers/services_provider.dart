@@ -62,3 +62,8 @@ final conferenceServiceProvider = Provider<ConferenceService>((ref) {
 final bibleServiceProvider = Provider<BibleService>((ref) {
   return BibleService();
 });
+
+/// Provider para `UploadService` usado en la pantalla de pruebas y subida de imágenes.
+// Nota: `UploadService` se usa directamente en pantallas de prueba. Si prefieres
+// inyectarlo, podemos volver a añadir un provider aquí; lo eliminé temporalmente
+// porque el analizador estaba reportando que `UploadService` no era visible.
