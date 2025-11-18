@@ -1,76 +1,51 @@
-# 📱 App Iglesia – Centro Internacional Avivamiento Venezuela
+# 📱 App Iglesia – Centro Internacional Avivamiento Venezuela (Arquitectura AWS)
 
 ## 🙌 Descripción
-Esta aplicación busca **unificar a los miembros de la iglesia en un solo lugar**.  
-Actualmente, muchos están dispersos en diversas redes sociales que algunos no saben usar o simplemente no utilizan.  
-Con esta app, centralizamos todo el contenido de la iglesia y permitimos que **invitados externos** puedan conocer lo que hacemos en el **Centro Internacional Avivamiento Venezuela**.
+Esta aplicación unifica a los miembros de la iglesia y expande nuestro alcance digital. Tras completar nuestro MVP inicial, el proyecto ha entrado en una fase de **refundación arquitectónica**, migrando de una plataforma BaaS (Firebase) a una pila **Serverless robusta, escalable y segura sobre Amazon Web Services (AWS)**.
 
 ---
 
-## 🎯 Visión y Objetivo
-- Expandir la comunidad del Centro Internacional Avivamiento Venezuela.  
-- Hacer accesible el mensaje de Dios y su bondad a cualquier persona.  
-- Unificar a todos los miembros en un solo espacio digital.  
-- Permitir experiencias interactivas: escuchar la radio en directo, participar en chats y realizar conferencias grupales entre pastores y líderes.
+## 🏗️ Arquitectura Técnica (El Nuevo Stack)
+Esta aplicación está construida con una mentalidad de "Infraestructura como Código" y separación de responsabilidades.
+
+* **Frontend:** Flutter (iOS, Android, Web)
+* **Autenticación:** Amazon Cognito (User Pools & Identity Pools)
+* **Base de Datos:** Amazon DynamoDB (NoSQL Serverless)
+* **Almacenamiento de Archivos:** Amazon S3 (Simple Storage Service)
+* **Backend (Lógica de Negocio):** AWS Lambda (Funciones Serverless en Python/Node.js)
+* **API:** Amazon API Gateway (Endpoints RESTful seguros)
+* **(Futuro) IA & RAG:** Amazon Bedrock (Modelos de IA) y Amazon OpenSearch (Base de Datos Vectorial)
 
 ---
 
-## 👥 Usuarios y Roles
-- **Pastor (Owner):** Control total de la app y toma de decisiones.  
-- **Admin (Desarrollador):** Administración técnica y soporte.  
-- **Líderes:** Publican mensajes, gestionan actividades y moderan.  
-- **Ministerios:** Roles específicos (adoradores, músicos, maestros, protocolo, etc.).  
-- **Miembro:** Usuario registrado con acceso al feed, calendario, radio y donaciones.  
-- **Invitado:** Acceso limitado al feed y calendario.
+## 🚀 Roadmap de Infraestructura y Features
 
----
 
-## ✨ Funcionalidades previstas (MVP)
-- 🔐 **Login con Firebase Auth** + opción de invitado.  
-- 📰 **Feed de publicaciones** (pastores y líderes).  
-- 📅 **Calendario de actividades**.  
-- 📻 **Radio en vivo** con chat en tiempo real.  
-- 🎥 **Retransmisiones en vivo** desde redes sociales.  
-- 📞 **Conferencias grupales** vía Jitsi Meet.  
-- 💳 **Donaciones seguras** (Stripe/PayPal).  
-- 👤 **Perfil de usuario** con foto y rol.
+1.  **Fase 1: Fundación AWS (En Progreso)**
+    * [X] **Almacenamiento:** Implementar subida segura a S3 (con URLs Prefirmadas generadas por Lambda).
+    * [ ] **Autenticación:** Migrar usuarios y lógica de Firebase Auth a Amazon Cognito.
+    * [ ] **Base de Datos:** Diseñar y migrar esquemas de Firestore a tablas de Amazon DynamoDB.
+    * [ ] **API Backend:** Desplegar los primeros endpoints (Lambda + API Gateway) para gestionar posts y usuarios.
 
----
+2.  **Fase 2: Paridad de Funcionalidad**
+    * [ ] **Feed:** Reconstruir el feed sobre la nueva API (DynamoDB + S3).
+    * [ ] **Radio y Chat:** Migrar Realtime Database a DynamoDB (para chat) o a un servicio como AWS IoT Core (para WebSockets).
+    * [ ] **Calendario y Donaciones:** Reimplementar la lógica de negocio en funciones Lambda.
 
-## 🛠️ Estado del proyecto
-🚧 **En construcción**: Actualmente estamos en la fase de planificación (PRD).  
-Aún no hay código escrito, pero ya tenemos definidos los requisitos y el roadmap.  
-
----
-
-## 🚀 Roadmap
-1. **MVP inicial:** Login + Invitado, Feed, Calendario, Donaciones.  
-2. **Iteración 2:** Radio en vivo + chat.  
-3. **Iteración 3:** Retransmisiones en vivo.  
-4. **Iteración 4:** Conferencias grupales.  
-5. **Iteración 5:** Estética avanzada y personalización.  
-
----
-
-## 📂 Documentación
-- [PRD.md](./PRD.md) → Documento de requisitos del producto.  
-- README.md (este archivo) → Presentación del proyecto.  
+3.  **Fase 3: Expansión y Modernización (IA)**
+    * [ ] **Microservicio de IA:** Desarrollar un backend RAG (Retrieval-Augmented Generation) en Python (FastAPI/Lambda).
+    * [ ] **Base de Datos Vectorial:** Implementar Amazon OpenSearch Serverless para indexar sermones y documentos.
+    * [ ] **Modelos de IA:** Integrar Amazon Bedrock (ej. Claude 3) para responder preguntas sobre la Biblia o la iglesia.
 
 ---
 
 ## 🤝 Contribución
-Este proyecto está pensado como un **legado comunitario**.  
-Si deseas colaborar en el desarrollo, documentación o pruebas, pronto publicaremos una guía de contribución.  
+Este proyecto es un **legado comunitario** y ahora también una **oportunidad de aprendizaje de alto nivel en Cloud Engineering**.
 
----
+Buscamos colaboradores interesados en:
+* Arquitectura Serverless en AWS.
+* Diseño avanzado de DynamoDB.
+* Gestión de infraestructura (Terraform/CDK - *opcional*).
+* Desarrollo de microservicios de IA.
 
-## 📜 Licencia
-Este proyecto será liberado bajo licencia **MIT**, permitiendo su uso, modificación y distribución libre, siempre con fines de expansión del Reino de Dios y beneficio comunitario.
-
----
-
-## 🙏 Créditos
-- **Centro Internacional Avivamiento Venezuela**  
-- Pastores, líderes y miembros que inspiran este proyecto.  
-- Comunidad de migrantes y voluntarios que aportan ideas y necesidades.  
-- Flutter & Firebase por la tecnología que lo hace posible.
+(El resto de secciones: Licencia, Créditos... pueden permanecer similares)

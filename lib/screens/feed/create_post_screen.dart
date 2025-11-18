@@ -7,6 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:avivamiento_app/providers/user_data_provider.dart';
+// IMPORT AÑADIDO: servicio de subida temporalmente usado desde esta pantalla
+// Importamos explícitamente solo `UploadService` para evitar ambigüedades
+import 'package:avivamiento_app/services/upload_service.dart'
+    show UploadService;
 
 class CreatePostScreen extends ConsumerStatefulWidget {
   const CreatePostScreen({super.key});
@@ -42,6 +46,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _submitPost() async {
     // 1. Validar el formulario
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -111,7 +116,50 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           else
             IconButton(
               icon: const Icon(Icons.send),
-              onPressed: _submitPost,
+              // MODIFICACIÓN TEMPORAL: en lugar de crear la publicación,
+              // aquí solo probamos el servicio de subida que implementaste.
+              // Esto evita lógica adicional y facilita validar la subida.
+              onPressed: _isLoading
+                  ? null
+                  : () async {
+                      // Si no hay imagen seleccionada no hacemos nada
+                      if (_selectedImageFile == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Selecciona una imagen primero')),
+                        );
+                        return;
+                      }
+
+                      setState(() => _isLoading = true);
+                      try {
+                        // Usamos el servicio directamente. Nota: UploadService
+                        // debe manejar errores internamente y lanzar si ocurre.
+                        // Convertimos XFile -> File antes de subir
+                        final file = File(_selectedImageFile!.path);
+                        // Llamamos directamente al constructor de la clase exportada
+                        final key = await UploadService().uploadImageToS3(file);
+                        // Mostramos el resultado en consola (temporal)
+                        // y en un SnackBar para visibilidad rápida.
+                        // ignore: avoid_print
+                        print('RESULTADO FINAL DE LA SUBIDA: $key');
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('Upload key: ${key ?? 'null'}')),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('Error subiendo imagen: $e')),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => _isLoading = false);
+                      }
+                    },
             ),
         ],
       ),

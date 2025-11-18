@@ -35,19 +35,19 @@ Future<void> main() async {
   // - try/catch para capturar errores nativos
   AudioHandler audioHandler;
   try {
-    // Damos más tiempo a la inicialización del servicio de audio en
-    // dispositivos más lentos o cuando hay demoras nativas.
     audioHandler = await AudioService.init(
-      builder: () => RadioAudioHandler(),
+      builder: () => RadioAudioHandler(), // <-- TU FRACASO
       config: const AudioServiceConfig(
         androidNotificationChannelId: 'com.example.avivamiento_app.radio',
         androidNotificationChannelName: 'Radio Avivamiento',
         androidNotificationOngoing: true,
       ),
-    ).timeout(const Duration(seconds: 20));
+    );
 
     // AÑADIDO: Línea de diagnóstico para confirmar la inicialización
-    print('!!!!!!!!!!!!!! [MAIN] AudioService.init SUCCEEDED !!!!!!!!!!!!!!');
+    if (kDebugMode) {
+      // ignore: avoid_print
+    }
   } catch (e, st) {
     if (kDebugMode) {
       // ignore: avoid_print
@@ -55,11 +55,8 @@ Future<void> main() async {
       // ignore: avoid_print
       print(st);
     }
-    // Si la inicialización falla seguimos con un handler no operativo
-    // para no bloquear la UI. En la mayor parte de los casos el problema
-    // se soluciona aumentando el timeout.
-    // AÑADIDO: Línea de diagnóstico indicando que se usará el handler de fallback
-    print('!!!!!!!!!!!!!! [MAIN] FALLBACK TO NoOpAudioHandler !!!!!!!!!!!!!!');
+
+    if (kDebugMode) {}
 
     audioHandler = NoOpAudioHandler();
   }
@@ -97,7 +94,7 @@ class MyApp extends ConsumerWidget {
     if (!kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         // Puesta segura: espera un breve intervalo para asegurar que
-        // la Activity/FlutterEngine esté correctamente inicializada
+
         // y evita que una excepción nativa bloquee la UI al inicio.
         await Future.delayed(const Duration(milliseconds: 500));
         try {
