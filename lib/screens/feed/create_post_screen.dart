@@ -1,16 +1,13 @@
 // lib/screens/feed/create_post_screen.dart
 
-import 'dart:io'; // Necesario para File
-import 'package:flutter/foundation.dart'; // Necesario para kIsWeb
+import 'dart:io';
+import 'package:flutter/foundation.dart'; // Para kIsWeb
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-// [CORRECCIÓN 1] Usamos el provider de servicios para inyectar UploadService
-// Importamos el servicio de subida con alias para evitar problemas de resolución
-// NOTE: Using inline upload logic here for the smoke test to avoid
-// resolver/import issues with the external UploadService class.
+// Importamos los providers y servicios correctos
+import 'package:avivamiento_app/providers/services_provider.dart';
+import 'package:avivamiento_app/providers/user_data_provider.dart';
 
 class CreatePostScreen extends ConsumerStatefulWidget {
   const CreatePostScreen({super.key});
@@ -20,6 +17,7 @@ class CreatePostScreen extends ConsumerStatefulWidget {
 }
 
 class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
+  final _textController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
@@ -28,7 +26,6 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   Future<void> _pickImage() async {
     try {
       final imagePicker = ImagePicker();
-      // Bajamos la calidad a 70 para que suba más rápido en la prueba
       final pickedFile = await imagePicker.pickImage(
           source: ImageSource.gallery, imageQuality: 70);
 
@@ -40,79 +37,66 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al seleccionar la imagen: $e')),
+          SnackBar(content: Text('Error al seleccionar imagen: $e')),
         );
       }
     }
   }
 
-  // [MODO SMOKE TEST]
-  // Esta función reemplaza temporalmente la lógica de crear post
-  // Su ÚNICO objetivo es probar si S3 funciona.
-  Future<void> _testUploadOnly() async {
-    if (_selectedImageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Selecciona una imagen primero')),
-      );
-      return;
-    }
+  Future<void> _submitPost() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_isLoading) return;
+
+    // Ocultar teclado
+    FocusScope.of(context).unfocus();
 
     setState(() => _isLoading = true);
 
+    // Obtener datos del usuario actual
+    final user = ref.read(userProfileProvider).value;
+
+    // Validación de seguridad: Usuario debe existir
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Error: No estás identificado. Reinicia la app.')),
+      );
+      setState(() => _isLoading = false);
+      return;
+    }
+
     try {
-      print("🚀 INICIANDO TEST DE SUBIDA A S3...");
+      // Llamamos al PostService (que ya conectamos a AWS)
+      final postService = ref.read(postServiceProvider);
 
-      // 1. Convertir XFile (cross-platform) a File (dart:io)
-      final fileToUpload = File(_selectedImageFile!.path);
+      await postService.createPost(
+        content: _textController.text.trim(),
+        authorId: user.id, // "USER#..."
+        authorName: user.nombre,
+        authorPhotoUrl: user.fotoUrl,
+        authorRole: user.rol,
+        imageFile:
+            _selectedImageFile, // Pasamos el XFile, el servicio lo convertirá
+      );
 
-      // 2. Llamar al endpoint para obtener URL firmada y subir directamente.
-      // (Código tomado de `upload_service.dart` para evitar problemas de import.)
-      const String apiUrl =
-          'https://kw64z1i0pk.execute-api.us-east-1.amazonaws.com';
-      try {
-        final handshakeResp = await http.post(
-          Uri.parse(apiUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({}),
-        );
-
-        if (handshakeResp.statusCode != 200) {
-          throw Exception(
-              'Error obteniendo URL firmada: ${handshakeResp.body}');
-        }
-
-        final data = jsonDecode(handshakeResp.body);
-        final String uploadUrl = data['uploadURL'];
-        final String objectKey = data['objectKey'];
-
-        final uploadResp = await http.put(
-          Uri.parse(uploadUrl),
-          headers: {'Content-Type': 'image/jpeg'},
-          body: await fileToUpload.readAsBytes(),
-        );
-
-        if (uploadResp.statusCode == 200) {
-          // éxito
-          if (mounted) {
-            print('🎉 ¡Subida exitosa! Key: $objectKey');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content:
-                      Text('🎉 ÉXITO: Imagen subida a S3! Key: $objectKey')),
-            );
-          }
-        } else {
-          throw Exception(
-              'Error subiendo a S3: ${uploadResp.statusCode} - ${uploadResp.body}');
-        }
-      } catch (e) {
-        rethrow;
-      }
-    } catch (e) {
-      print("❌ EXCEPCIÓN: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error crítico: $e')),
+          const SnackBar(
+            content: Text('¡Publicación creada con éxito!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop(); // Volver al Feed
+      }
+    } catch (e) {
+      print("❌ Error UI: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al publicar: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     } finally {
@@ -126,22 +110,22 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prueba de Conexión AWS'), // Título temporal
-        backgroundColor:
-            Colors.amber, // Color de advertencia (estamos probando)
+        title: const Text('Nueva Publicación'),
         actions: [
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.only(right: 16.0),
-              child:
-                  Center(child: CircularProgressIndicator(color: Colors.white)),
+              child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white)),
             )
           else
             IconButton(
-              icon: const Icon(Icons.cloud_upload), // Icono de subida
-              // [CORRECCIÓN 2] Llamamos a la función de prueba, no a la de post
-              onPressed: _testUploadOnly,
-              tooltip: "Probar subida a S3",
+              icon: const Icon(Icons.send),
+              onPressed: _submitPost, // Llamamos a la función REAL
+              tooltip: "Publicar",
             ),
         ],
       ),
@@ -151,30 +135,30 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              const Text(
-                "MODO DE PRUEBA (SMOKE TEST)",
-                style:
-                    TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                "1. Selecciona una foto.\n2. Pulsa el icono de la nube arriba a la derecha.\n3. Espera el mensaje verde.",
-                textAlign: TextAlign.center,
+              // Input de Texto
+              TextFormField(
+                controller: _textController,
+                decoration: const InputDecoration(
+                  hintText: 'comparte una palabra de bendición...',
+                  border: InputBorder.none,
+                ),
+                maxLines: null,
+                validator: (value) =>
+                    value!.trim().isEmpty ? 'Escribe algo para publicar' : null,
               ),
               const SizedBox(height: 20),
 
-              // Visualizador de imagen
+              // Previsualización de Imagen
               if (_selectedImageFile != null)
                 Stack(
                   alignment: Alignment.topRight,
                   children: [
                     Container(
-                      height: 300,
+                      height: 250,
                       width: double.infinity,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey),
+                        color: Colors.grey[200],
                         image: DecorationImage(
                           image: kIsWeb
                               ? NetworkImage(_selectedImageFile!.path)
@@ -196,20 +180,16 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                       },
                     ),
                   ],
-                )
-              else
-                Container(
-                  height: 200,
-                  color: Colors.grey[200],
-                  child: const Center(child: Text("Sin imagen")),
                 ),
             ],
           ),
         ),
       ),
+      // Botón flotante para adjuntar foto
       floatingActionButton: FloatingActionButton(
         onPressed: _isLoading ? null : _pickImage,
-        child: const Icon(Icons.add_a_photo),
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add_a_photo, color: Colors.white),
       ),
     );
   }

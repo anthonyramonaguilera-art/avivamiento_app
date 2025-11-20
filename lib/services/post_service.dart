@@ -1,69 +1,17 @@
 // lib/services/post_service.dart
-
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:avivamiento_app/models/post_model.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:avivamiento_app/services/upload_service.dart';
+import 'package:avivamiento_app/models/post_model.dart';
 
 class PostService {
-  final FirebaseFirestore _firestore;
+  // ⚠️ REEMPLAZA con tu URL base (la misma que usaste en upload_service.dart pero SIN la ruta final)
+  final String _apiBaseUrl =
+      'https://kw64z1i0pk.execute-api.us-east-1.amazonaws.com';
 
-  late final CollectionReference<Map<String, dynamic>> _postsCollection;
-
-  PostService(this._firestore) {
-    _postsCollection = _firestore.collection('posts');
-  }
-
-  Stream<List<PostModel>> getPostsStream() {
-    return _postsCollection
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return PostModel.fromMap(doc.data(), doc.id);
-      }).toList();
-    });
-  }
-
-  Future<String> _uploadImageToImgbb(XFile imageFile) async {
-    final apiKey = dotenv.env['IMGBB_API_KEY'];
-    if (apiKey == null) throw Exception('IMGBB_API_KEY no encontrada');
-    final uri = Uri.parse('https://api.imgbb.com/1/upload?key=$apiKey');
-    final request = http.MultipartRequest('POST', uri);
-    final bytes = await imageFile.readAsBytes();
-    request.fields['image'] = base64Encode(bytes);
-    final response = await request.send();
-    if (response.statusCode == 200) {
-      final responseBody = await response.stream.bytesToString();
-      final jsonResponse = json.decode(responseBody);
-      return jsonResponse['data']['url'];
-    } else {
-      throw Exception('Fallo al subir la imagen a ImgBB');
-    }
-  }
-
-  /// Extrae la primera URL de video válida del texto.
-  Map<String, String>? _extractVideoInfo(String text) {
-    final RegExp exp = RegExp(
-        r'https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be|facebook\.com|fb\.watch|tiktok\.com)\S+');
-    final Match? match = exp.firstMatch(text);
-
-    if (match != null) {
-      final String url = match.group(0)!;
-      String provider = 'Link';
-      if (url.contains('youtube') || url.contains('youtu.be')) {
-        provider = 'YouTube';
-      } else if (url.contains('facebook') || url.contains('fb.watch')) {
-        provider = 'Facebook';
-      } else if (url.contains('tiktok')) {
-        provider = 'TikTok';
-      }
-      return {'url': url, 'provider': provider};
-    }
-    return null;
-  }
+  final UploadService _uploadService = UploadService();
 
   Future<void> createPost({
     required String content,
@@ -73,48 +21,87 @@ class PostService {
     required String authorRole,
     XFile? imageFile,
   }) async {
-    String? imageUrl;
-    Map<String, String>? videoInfo;
+    String? imageKey;
 
-    if (imageFile != null) {
-      imageUrl = await _uploadImageToImgbb(imageFile);
-    }
+    try {
+      // 1. Subir a S3 (si hay foto)
+      if (imageFile != null) {
+        print('📸 Iniciando subida de imagen a S3...');
+        final file = File(imageFile.path);
+        imageKey = await _uploadService.uploadImageToS3(file);
 
-    videoInfo = _extractVideoInfo(content);
-
-    await _postsCollection.add({
-      'content': content,
-      'authorId': authorId,
-      'authorName': authorName,
-      'authorPhotoUrl': authorPhotoUrl,
-      'authorRole': authorRole,
-      'imageUrl': imageUrl,
-      'videoUrl': videoInfo?['url'],
-      'videoProvider': videoInfo?['provider'],
-      'timestamp': FieldValue.serverTimestamp(),
-      'likes': 0,
-      'likedBy': [],
-    });
-  }
-
-  Future<void> deletePost(String postId) {
-    return _postsCollection.doc(postId).delete();
-  }
-
-  Future<void> toggleLike(String postId, String userId, bool isLiked) {
-    return _firestore.runTransaction((transaction) async {
-      final postRef = _postsCollection.doc(postId);
-      if (isLiked) {
-        transaction.update(postRef, {
-          'likes': FieldValue.increment(-1),
-          'likedBy': FieldValue.arrayRemove([userId])
-        });
-      } else {
-        transaction.update(postRef, {
-          'likes': FieldValue.increment(1),
-          'likedBy': FieldValue.arrayUnion([userId])
-        });
+        if (imageKey == null) {
+          throw Exception('Fallo la subida de la imagen a S3');
+        }
+        print('✅ Imagen subida. Key: $imageKey');
       }
-    });
+
+      // 2. Enviar metadatos a Lambda
+      final url = Uri.parse('$_apiBaseUrl/create-post');
+
+      final body = {
+        "userId": authorId,
+        "authorName": authorName,
+        "content": content,
+        "imageKey": imageKey,
+        "authorRole": authorRole,
+        "authorPhotoUrl": authorPhotoUrl,
+      };
+
+      print('🚀 Enviando datos del post a: $url');
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      print('📡 Respuesta AWS: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Error al crear post en BD: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Error crítico en createPost: $e');
+      rethrow;
+    }
+  }
+
+  Stream<List<PostModel>> getPostsStream() async* {
+    try {
+      final url = Uri.parse('$_apiBaseUrl/feed');
+      print('📥 Solicitando feed a: $url');
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // La Lambda devuelve: { "message": "...", "posts": [...] }
+        final List<dynamic> postsJson = data['posts'] ?? [];
+
+        print('✅ Feed recibido: ${postsJson.length} posts');
+
+        // Convertimos cada JSON en un objeto PostModel
+        final List<PostModel> posts =
+            postsJson.map((json) => PostModel.fromJson(json)).toList();
+
+        // "Emitimos" la lista de posts para que el StreamBuilder la reciba
+        yield posts;
+      } else {
+        print('❌ Error al obtener feed: ${response.statusCode}');
+        yield []; // Emitimos lista vacía en caso de error para no colgar la app
+      }
+    } catch (e) {
+      print('❌ Excepción en getPostsStream: $e');
+      yield [];
+    }
+  }
+
+  Future<void> deletePost(String postId) async {
+    print("Borrar post no implementado aún en AWS");
+  }
+
+  Future<void> toggleLike(String postId, String userId, bool isLiked) async {
+    print("Likes no implementados aún en AWS");
   }
 }

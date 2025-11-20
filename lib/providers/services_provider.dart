@@ -35,8 +35,7 @@ final userServiceProvider = Provider<UserService>((ref) {
 
 // [CORRECCIÓN] Ahora el postServiceProvider solo necesita la dependencia de Firestore.
 final postServiceProvider = Provider<PostService>((ref) {
-  final firestore = ref.watch(firestoreProvider);
-  return PostService(firestore); // Se elimina el segundo argumento 'storage'
+  return PostService();
 });
 
 final eventServiceProvider = Provider<EventService>((ref) {

@@ -69,7 +69,7 @@ class PostCard extends ConsumerWidget {
                                   color: getRoleColor(post.authorRole),
                                   fontWeight: FontWeight.bold)),
                           Text(
-                            '${post.timestamp.toDate().day}/${post.timestamp.toDate().month}/${post.timestamp.toDate().year}',
+                            '${post.timestamp.day}/${post.timestamp.month}/${post.timestamp.year}',
                             style: const TextStyle(
                                 fontSize: 12, color: Colors.grey),
                           ),

@@ -1,6 +1,7 @@
 // lib/models/post_model.dart
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+// [CAMBIO] Ya no necesitamos cloud_firestore. El modelo es puro Dart.
+// import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PostModel {
   final String id;
@@ -11,11 +12,13 @@ class PostModel {
   final String content;
   final String? imageUrl;
 
-  // --- [SOLUCIÓN] Campos añadidos para el video ---
+  // Campos de video (opcionales por ahora en AWS)
   final String? videoUrl;
   final String? videoProvider;
 
-  final Timestamp timestamp;
+  // [CAMBIO] Usamos DateTime nativo en lugar de Timestamp de Firebase
+  final DateTime timestamp;
+
   final int likes;
   final List<String> likedBy;
 
@@ -27,30 +30,49 @@ class PostModel {
     required this.authorRole,
     required this.content,
     this.imageUrl,
-    this.videoUrl, // <-- Incluido en el constructor
-    this.videoProvider, // <-- Incluido en el constructor
+    this.videoUrl,
+    this.videoProvider,
     required this.timestamp,
     this.likes = 0,
     this.likedBy = const [],
   });
 
-  factory PostModel.fromMap(Map<String, dynamic> data, String documentId) {
-    final List<dynamic> likedByFromDb = data['likedBy'] ?? [];
-    final List<String> likedByList = List<String>.from(likedByFromDb);
+  factory PostModel.fromJson(Map<String, dynamic> data) {
+    // DynamoDB devuelve las fechas como Strings ISO 8601 (ej: "2025-11-19T...")
+    DateTime parseDate(dynamic dateVal) {
+      if (dateVal is String) {
+        return DateTime.parse(dateVal);
+      }
+      return DateTime.now(); // Fallback por seguridad
+    }
+
+    // Extraemos el ID. En DynamoDB Single Table, el ID suele venir en el campo "PK"
+    // o en "postId" si lo devolvimos limpio.
+    // Asumimos que la Lambda nos manda una lista limpia de objetos "Post".
+    // Si la Lambda devuelve el raw de Dynamo, el ID es 'PK' (ej: "POST#uuid").
+    String docId = data['postId'] ?? data['PK'] ?? '';
+    if (docId.startsWith('POST#')) {
+      docId = docId.replaceAll('POST#', ''); // Limpiamos el prefijo si existe
+    }
 
     return PostModel(
-      id: documentId,
-      authorId: data['authorId'] ?? '',
-      authorName: data['authorName'] ?? 'Autor Desconocido',
+      id: docId,
+      authorId: data['userId'] ??
+          data['authorId'] ??
+          '', // AWS usa 'userId', mantenemos compatibilidad
+      authorName: data['authorName'] ?? 'Autor',
       authorPhotoUrl: data['authorPhotoUrl'],
       authorRole: data['authorRole'] ?? 'Miembro',
       content: data['content'] ?? '',
-      imageUrl: data['imageUrl'],
-      videoUrl: data['videoUrl'], // <-- Mapeado desde Firestore
-      videoProvider: data['videoProvider'], // <-- Mapeado desde Firestore
-      timestamp: data['timestamp'] ?? Timestamp.now(),
-      likes: data['likes'] ?? 0,
-      likedBy: likedByList,
+      imageUrl: data['imageUrl'] ??
+          data[
+              'imageKey'], // A veces lo guardamos como imageKey, mapeamos ambos
+      videoUrl: data['videoUrl'],
+      videoProvider: data['videoProvider'],
+      // [CAMBIO] Parseamos el string ISO a DateTime
+      timestamp: parseDate(data['createdAt'] ?? data['timestamp']),
+      likes: (data['likes'] is int) ? data['likes'] : 0,
+      likedBy: List<String>.from(data['likedBy'] ?? []),
     );
   }
 }
