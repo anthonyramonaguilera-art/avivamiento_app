@@ -1,7 +1,7 @@
 📱 App Iglesia – Centro Internacional Avivamiento Venezuela
 🙌 Descripción
 
-La App Iglesia – Centro Internacional Avivamiento Venezuela es una aplicación multiplataforma (Android, iOS, Web y Desktop) desarrollada en Flutter que busca unificar la vida comunitaria de la iglesia en un solo espacio digital. Actualmente, muchos miembros están dispersos en diversas redes sociales que algunos no saben usar o simplemente no utilizan. Con esta app, centralizamos todo el contenido y permitimos que invitados externos conozcan lo que hacemos en el Centro Internacional Avivamiento Venezuela.
+La App Avivamiento de la iglesia Centro Internacional Avivamiento Venezuela es una aplicación multiplataforma (Android, iOS, Web y Desktop) desarrollada en Flutter que busca unificar la vida comunitaria de la iglesia en un solo espacio digital. Actualmente, muchos miembros están dispersos en diversas redes sociales que algunos no saben usar o simplemente no utilizan. Con esta app, centralizamos todo el contenido y permitimos que invitados externos conozcan lo que hacemos en el Centro Internacional Avivamiento Venezuela.
 🎯 Visión y Objetivos
 
     Expandir la comunidad del Centro Internacional Avivamiento Venezuela.
