@@ -2,8 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Importamos flutter_svg
 
-import 'package:avivamiento_app/providers/services_provider.dart'; // [NUEVO] Necesitamos los providers
+import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:avivamiento_app/screens/auth/login_screen.dart';
 import 'package:avivamiento_app/screens/auth/register_screen.dart';
 
@@ -12,41 +13,50 @@ import 'package:avivamiento_app/screens/auth/register_screen.dart';
 /// Ofrece al usuario las opciones para iniciar sesión, registrarse
 /// o continuar como invitado.
 class AuthScreen extends ConsumerWidget {
-  // [CAMBIO] Ahora es ConsumerWidget
   const AuthScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // [CAMBIO] Añadimos WidgetRef
+    final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.colorScheme.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Spacer(),
-              Image.asset(
-                'assets/images/logo.png',
-                height: screenHeight * 0.15,
+              const Spacer(flex: 2),
+              
+              // Logo con animación sutil (Hero si se usa en otro lado)
+              Hero(
+                tag: 'app_logo',
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  height: screenHeight * 0.18,
+                ),
               ),
-              const SizedBox(height: 20),
-              const Text(
+              
+              const SizedBox(height: 40),
+              
+              Text(
                 'Bienvenido',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: theme.textTheme.displayMedium,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Text(
-                'Únete a nuestra comunidad',
+                'Únete a nuestra comunidad de fe y avivamiento.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: Colors.grey[600],
+                ),
               ),
-              const SizedBox(height: 50),
+              
+              const Spacer(flex: 3),
 
               // Botón para ir a la pantalla de Login.
               ElevatedButton(
@@ -72,32 +82,24 @@ class AuthScreen extends ConsumerWidget {
                     ),
                   );
                 },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
                 child: const Text('Registrarse'),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-              // --- [NUEVO Y CORREGIDO] Botón para continuar como invitado ---
+              // Botón para continuar como invitado
               TextButton(
                 onPressed: () async {
-                  // Leemos el authService y llamamos al método para login anónimo.
-                  // El AuthWrapper se encargará del resto automáticamente.
                   final authService = ref.read(authServiceProvider);
                   await authService.signInAnonymously();
                 },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey[600],
+                ),
                 child: const Text('Continuar como Invitado'),
               ),
 
-              const Spacer(),
+              const Spacer(flex: 1),
             ],
           ),
         ),

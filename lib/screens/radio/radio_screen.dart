@@ -31,15 +31,32 @@ class RadioScreen extends ConsumerWidget {
     return Scaffold(
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 10.0),
+          // Área superior con el logo y controles (Visualmente separada)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 20.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
             child: Column(
               children: [
-                Image.asset(
-                  'assets/images/radio_logo.png',
-                  height: 150,
-                  width: 150,
+                Hero(
+                  tag: 'radio_logo',
+                  child: Image.asset(
+                    'assets/images/radio_logo.png',
+                    height: 160,
+                    width: 160,
+                  ),
                 ),
+                const SizedBox(height: 24),
 
                 // 2. Escuchamos el PlaybackState del handler
                 StreamBuilder<PlaybackState>(
@@ -54,82 +71,115 @@ class RadioScreen extends ConsumerWidget {
                         processingState == AudioProcessingState.buffering) {
                       return const Padding(
                         padding: EdgeInsets.all(20.0),
-                        child: CircularProgressIndicator(),
+                        child: SizedBox(
+                          height: 60, 
+                          width: 60, 
+                          child: CircularProgressIndicator()
+                        ),
                       );
                     }
 
-                    // El Lottie ahora se anima basado en el stream
                     return Column(
                       children: [
-                        // Lightweight, custom visualizer replacing Lottie animation
+                        // Visualizer
                         PlayVisualizer(isPlaying: isPlaying),
-                        const SizedBox(height: 10),
-                        const Text(
+                        const SizedBox(height: 16),
+                        Text(
                           'Radio Avivamiento En Vivo',
-                          style: TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        IconButton(
-                          icon: Icon(
-                            isPlaying
-                                ? Icons.pause_circle_filled
-                                : Icons.play_circle_filled,
-                            size: 70,
-                            color: Colors.blue,
+                        const SizedBox(height: 24),
+                        
+                        // Botón de Play/Pause Moderno
+                        Material(
+                          color: Theme.of(context).colorScheme.primary,
+                          elevation: 8,
+                          shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            onTap: () {
+                              if (isPlaying) {
+                                audioHandler.pause();
+                              } else {
+                                audioHandler.play();
+                              }
+                            },
+                            customBorder: const CircleBorder(),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Icon(
+                                isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                                size: 48,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                          onPressed: () {
-                            // 3. Enviamos comandos al Handler
-                            if (isPlaying) {
-                              audioHandler.pause();
-                            } else {
-                              audioHandler.play();
-                            }
-                          },
                         ),
                       ],
                     );
                   },
                 ),
-                // Eliminamos el slider de volumen. Es innecesario para
-                // una radio y complica la UI. El usuario usará los
-                // controles de volumen nativos del teléfono.
               ],
             ),
           ),
-          const Divider(height: 1),
-          // El resto de tu UI (Chat, etc.) no cambia.
+          
+          // Chat Area
           Expanded(
-            child: messagesAsyncValue.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, st) =>
-                  const Center(child: Text('Error al cargar el chat')),
-              data: (messages) {
-                return ListView.builder(
-                  reverse: true,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMe = userProfile.value?.id == message.authorId;
-                    return ChatBubble(message: message, isMe: isMe);
-                  },
-                );
-              },
+            child: Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: messagesAsyncValue.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, st) =>
+                    Center(child: Text('Error al cargar el chat', style: TextStyle(color: Theme.of(context).colorScheme.error))),
+                data: (messages) {
+                  if (messages.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'Sé el primero en escribir...',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    reverse: true,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      final isMe = userProfile.value?.id == message.authorId;
+                      return ChatBubble(message: message, isMe: isMe);
+                    },
+                  );
+                },
+              ),
             ),
           ),
           if (canChat)
             const MessageInputField()
           else
             Container(
-              padding: const EdgeInsets.all(12.0),
-              color: Colors.grey[200],
+              padding: const EdgeInsets.all(24.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
+                  Text(
                     'Inicia sesión para participar en el chat.',
                     textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).push(

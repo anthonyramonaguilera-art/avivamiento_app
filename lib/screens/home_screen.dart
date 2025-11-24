@@ -27,13 +27,17 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(selectedIndexProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Avivamiento'),
+        // Removemos acciones redundantes o las hacemos más sutiles si es necesario
+        // Por ahora las mantenemos pero con el estilo del tema
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: const Icon(Icons.person_outline_rounded), // Iconos redondeados
+            tooltip: 'Perfil',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const ProfileScreen()),
@@ -41,7 +45,7 @@ class HomeScreen extends ConsumerWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.monetization_on_outlined),
+            icon: const Icon(Icons.favorite_border_rounded),
             tooltip: 'Donaciones',
             onPressed: () {
               Navigator.of(context).push(
@@ -50,49 +54,51 @@ class HomeScreen extends ConsumerWidget {
               );
             },
           ),
-
-          // === INICIO DEL CAMBIO: ACCESO A LA BIBLIA ===
           IconButton(
-            // El icono ya es un libro, lo mantendremos.
-            icon: const Icon(Icons.menu_book,
-                color: Color.fromARGB(255, 0, 47, 255)),
-            // 1. Cambia el tooltip a "La Biblia"
+            icon: const Icon(Icons.menu_book_rounded),
             tooltip: 'La Biblia',
             onPressed: () {
-              // 2. Navega a la nueva pantalla de búsqueda usando su ruta nombrada
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const BibleHubScreen()),
               );
             },
           ),
-          // === FIN DEL CAMBIO ===
+          const SizedBox(width: 8),
         ],
       ),
       body: IndexedStack(index: selectedIndex, children: _widgetOptions),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendario',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.video_library),
-            label: 'Videos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Reuniones',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.radio), label: 'Radio'),
-        ],
-        currentIndex: selectedIndex,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (index) {
           ref.read(selectedIndexProvider.notifier).state = index;
         },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Inicio',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_today_outlined),
+            selectedIcon: Icon(Icons.calendar_today_rounded),
+            label: 'Calendario',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.video_library_outlined),
+            selectedIcon: Icon(Icons.video_library_rounded),
+            label: 'Videos',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.groups_outlined),
+            selectedIcon: Icon(Icons.groups_rounded),
+            label: 'Reuniones',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.radio_outlined),
+            selectedIcon: Icon(Icons.radio_rounded),
+            label: 'Radio',
+          ),
+        ],
       ),
     );
   }
