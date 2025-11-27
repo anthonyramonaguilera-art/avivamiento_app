@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // Importamos flutter_svg
+// Importamos flutter_svg
 
 import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:avivamiento_app/screens/auth/login_screen.dart';
@@ -21,7 +21,7 @@ class AuthScreen extends ConsumerWidget {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -30,7 +30,7 @@ class AuthScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(flex: 2),
-              
+
               // Logo con animación sutil (Hero si se usa en otro lado)
               Hero(
                 tag: 'app_logo',
@@ -39,9 +39,9 @@ class AuthScreen extends ConsumerWidget {
                   height: screenHeight * 0.18,
                 ),
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               Text(
                 'Bienvenido',
                 textAlign: TextAlign.center,
@@ -55,7 +55,7 @@ class AuthScreen extends ConsumerWidget {
                   color: Colors.grey[600],
                 ),
               ),
-              
+
               const Spacer(flex: 3),
 
               // Botón para ir a la pantalla de Login.

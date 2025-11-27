@@ -122,7 +122,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Título del Evento'),
+                decoration:
+                    const InputDecoration(labelText: 'Título del Evento'),
                 validator: (value) =>
                     value!.trim().isEmpty ? 'El título es requerido' : null,
               ),
@@ -147,7 +148,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                       : 'No seleccionada',
                 ),
                 onTap: () async {
-                  final pickedTime = await _pickDateTime(_startTime ?? DateTime.now());
+                  final pickedTime =
+                      await _pickDateTime(_startTime ?? DateTime.now());
                   if (pickedTime != null) {
                     setState(() => _startTime = pickedTime);
                   }
@@ -162,8 +164,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                       : 'No seleccionada',
                 ),
                 onTap: () async {
-                  final pickedTime =
-                      await _pickDateTime(_endTime ?? _startTime ?? DateTime.now());
+                  final pickedTime = await _pickDateTime(
+                      _endTime ?? _startTime ?? DateTime.now());
                   if (pickedTime != null) {
                     setState(() => _endTime = pickedTime);
                   }

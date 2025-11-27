@@ -32,167 +32,191 @@ class RadioScreen extends ConsumerWidget {
       body: Column(
         children: [
           // Área superior con el logo y controles (Visualmente separada)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 20.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Hero(
-                  tag: 'radio_logo',
-                  child: Image.asset(
-                    'assets/images/radio_logo.png',
-                    height: 160,
-                    width: 160,
+          Expanded(
+            flex: 1,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(32)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                ),
-                const SizedBox(height: 24),
+                ],
+              ),
+              child: StreamBuilder<PlaybackState>(
+                stream: audioHandler.playbackState,
+                builder: (context, snapshot) {
+                  final playbackState = snapshot.data;
+                  final isPlaying = playbackState?.playing ?? false;
+                  final processingState = playbackState?.processingState;
 
-                // 2. Escuchamos el PlaybackState del handler
-                StreamBuilder<PlaybackState>(
-                  stream: audioHandler.playbackState,
-                  builder: (context, snapshot) {
-                    final playbackState = snapshot.data;
-                    final isPlaying = playbackState?.playing ?? false;
-                    final processingState = playbackState?.processingState;
+                  // Mostramos un indicador de carga si está conectando
+                  if (processingState == AudioProcessingState.loading ||
+                      processingState == AudioProcessingState.buffering) {
+                    return const Center(
+                      child: SizedBox(
+                          height: 60,
+                          width: 60,
+                          child: CircularProgressIndicator()),
+                    );
+                  }
 
-                    // Mostramos un indicador de carga si está conectando
-                    if (processingState == AudioProcessingState.loading ||
-                        processingState == AudioProcessingState.buffering) {
-                      return const Padding(
-                        padding: EdgeInsets.all(20.0),
-                        child: SizedBox(
-                          height: 60, 
-                          width: 60, 
-                          child: CircularProgressIndicator()
-                        ),
-                      );
-                    }
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo y Visualizer lado a lado
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Hero(
+                            tag: 'radio_logo',
+                            child: Image.asset(
+                              'assets/images/radio_logo.png',
+                              height: 120, // Logo un poco más grande
+                              width: 120,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          // Visualizer (Ondas)
+                          PlayVisualizer(isPlaying: isPlaying),
+                        ],
+                      ),
+                      const SizedBox(height: 30),
 
-                    return Column(
-                      children: [
-                        // Visualizer
-                        PlayVisualizer(isPlaying: isPlaying),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Radio Avivamiento En Vivo',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Botón de Play/Pause Moderno
-                        Material(
-                          color: Theme.of(context).colorScheme.primary,
-                          elevation: 8,
-                          shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.4),
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            onTap: () {
-                              if (isPlaying) {
-                                audioHandler.pause();
-                              } else {
-                                audioHandler.play();
-                              }
-                            },
-                            customBorder: const CircleBorder(),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Icon(
-                                isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                size: 48,
-                                color: Colors.white,
-                              ),
+                      // Botón de Play/Pause Minimalista y Pequeño
+                      Material(
+                        color: Theme.of(context).colorScheme.primary,
+                        elevation: 4,
+                        shadowColor: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.4),
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          onTap: () {
+                            if (isPlaying) {
+                              audioHandler.pause();
+                            } else {
+                              audioHandler.play();
+                            }
+                          },
+                          customBorder: const CircleBorder(),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Icon(
+                              isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                              size: 32, // Más pequeño y minimalista
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          
-          // Chat Area
-          Expanded(
-            child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: messagesAsyncValue.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, st) =>
-                    Center(child: Text('Error al cargar el chat', style: TextStyle(color: Theme.of(context).colorScheme.error))),
-                data: (messages) {
-                  if (messages.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'Sé el primero en escribir...',
-                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                    );
-                  }
-                  return ListView.builder(
-                    reverse: true,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      final isMe = userProfile.value?.id == message.authorId;
-                      return ChatBubble(message: message, isMe: isMe);
-                    },
+                      const SizedBox(height: 16),
+
+                      // Texto debajo del botón
+                      Text(
+                        'Radio Avivamiento En Vivo',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                    ],
                   );
                 },
               ),
             ),
           ),
-          if (canChat)
-            const MessageInputField()
-          else
-            Container(
-              padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
+
+          // Chat Area (Equitativo)
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    child: messagesAsyncValue.when(
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, st) => Center(
+                          child: Text('Error al cargar el chat',
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error))),
+                      data: (messages) {
+                        if (messages.isEmpty) {
+                          return Center(
+                            child: Text(
+                              'Sé el primero en escribir...',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          );
+                        }
+                        return ListView.builder(
+                          reverse: true,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 20),
+                          itemCount: messages.length,
+                          itemBuilder: (context, index) {
+                            final message = messages[index];
+                            final isMe =
+                                userProfile.value?.id == message.authorId;
+                            return ChatBubble(message: message, isMe: isMe);
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Inicia sesión para participar en el chat.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AuthScreen(),
+                ),
+                if (canChat)
+                  const MessageInputField()
+                else
+                  Container(
+                    padding: const EdgeInsets.all(24.0),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, -5),
                         ),
-                      );
-                    },
-                    child: const Text('Iniciar Sesión o Registrarse'),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Inicia sesión para participar en el chat.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const AuthScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text('Iniciar Sesión o Registrarse'),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+              ],
             ),
+          ),
         ],
       ),
     );

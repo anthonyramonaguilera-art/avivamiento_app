@@ -3,12 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Colores principales - Paleta Minimalista y Moderna
-  static const Color primaryColor = Color(0xFF0D47A1); // Azul Marino Profundo (Marca)
+  static const Color primaryColor =
+      Color(0xFF0D47A1); // Azul Marino Profundo (Marca)
   static const Color secondaryColor = Color(0xFF1976D2); // Azul más vibrante
   static const Color accentColor = Color(0xFFFFCA28); // Ámbar suave
-  
+
   // Fondos y Superficies
-  static const Color backgroundColor = Color(0xFFF5F7FA); // Gris azulado muy claro (Airy)
+  static const Color backgroundColor =
+      Color(0xFFF5F7FA); // Gris azulado muy claro (Airy)
   static const Color surfaceColor = Colors.white;
   static const Color errorColor = Color(0xFFD32F2F);
 
@@ -33,7 +35,7 @@ class AppTheme {
         onBackground: textPrimary,
         onSurface: textPrimary,
       ),
-      
+
       // Tipografía moderna y limpia
       textTheme: GoogleFonts.interTextTheme().copyWith(
         displayLarge: GoogleFonts.inter(
@@ -126,7 +128,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceColor,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -151,10 +154,12 @@ class AppTheme {
       // Cards suaves y modernas
       cardTheme: CardThemeData(
         color: surfaceColor,
-        elevation: 0, // Sin elevación por defecto, usaremos bordes o sombras suaves custom
+        elevation:
+            0, // Sin elevación por defecto, usaremos bordes o sombras suaves custom
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24), // Bordes más redondeados
-          side: BorderSide(color: Colors.grey.shade100, width: 1), // Borde sutil
+          side:
+              BorderSide(color: Colors.grey.shade100, width: 1), // Borde sutil
         ),
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       ),
@@ -166,34 +171,28 @@ class AppTheme {
         height: 70,
         indicatorColor: primaryColor.withOpacity(0.1),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        labelTextStyle: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return GoogleFonts.inter(
-              fontSize: 12, 
-              fontWeight: FontWeight.w600, 
-              color: primaryColor
-            );
+                fontSize: 12, fontWeight: FontWeight.w600, color: primaryColor);
           }
           return GoogleFonts.inter(
-            fontSize: 12, 
-            fontWeight: FontWeight.w500, 
-            color: textTertiary
-          );
+              fontSize: 12, fontWeight: FontWeight.w500, color: textTertiary);
         }),
-        iconTheme: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: primaryColor, size: 26);
           }
           return const IconThemeData(color: textTertiary, size: 24);
         }),
       ),
-      
+
       // Iconos generales
       iconTheme: const IconThemeData(
         color: textPrimary,
         size: 24,
       ),
-      
+
       // Divider
       dividerTheme: DividerThemeData(
         color: Colors.grey.shade200,

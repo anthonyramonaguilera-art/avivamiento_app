@@ -317,11 +317,9 @@ class BibleService {
     bookId ??= _bookNameToId[bookPart.trim()];
     final lastWord = bookKey.split(' ').last;
     bookId ??= _bookNameToId[lastWord];
-    if (bookId == null) {
-      bookId = _closestBookId(bookKey) ??
-          _closestBookId(bookPart) ??
-          _closestBookId(lastWord);
-    }
+    bookId ??= _closestBookId(bookKey) ??
+        _closestBookId(bookPart) ??
+        _closestBookId(lastWord);
 
     // Avoid sending clearly invalid codes to API
     if (bookId == null) return null;

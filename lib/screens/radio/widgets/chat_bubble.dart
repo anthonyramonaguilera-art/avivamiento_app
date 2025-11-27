@@ -20,18 +20,16 @@ class ChatBubble extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // [NUEVO] Muestra el avatar solo si el mensaje no es mío
           if (!isMe)
             CircleAvatar(
               radius: 15,
-              backgroundImage: hasPhoto
-                  ? NetworkImage(message.authorPhotoUrl!)
-                  : null,
+              backgroundImage:
+                  hasPhoto ? NetworkImage(message.authorPhotoUrl!) : null,
               child: !hasPhoto ? const Icon(Icons.person, size: 15) : null,
             ),
           const SizedBox(width: 8),
@@ -41,9 +39,9 @@ class ChatBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isMe 
-                    ? Theme.of(context).colorScheme.primaryContainer 
-                    : Theme.of(context).colorScheme.surfaceVariant,
+                color: isMe
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -52,9 +50,8 @@ class ChatBubble extends StatelessWidget {
                 ),
               ),
               child: Column(
-                crossAxisAlignment: isMe
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 children: [
                   if (!isMe) // Muestra nombre y rol solo si no es mío
                     Row(
