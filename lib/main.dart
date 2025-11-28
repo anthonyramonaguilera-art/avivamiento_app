@@ -2,12 +2,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
 import 'package:avivamiento_app/screens/splash_screen.dart';
 import 'package:avivamiento_app/screens/bible_search_screen.dart';
 import 'package:avivamiento_app/services/audio_handler.dart';
+import 'package:avivamiento_app/services/legend_service.dart';
+import 'package:avivamiento_app/services/backend/firestore_legend_backend.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:avivamiento_app/providers/audio_provider.dart';
 import 'package:avivamiento_app/utils/theme.dart';
@@ -28,6 +32,10 @@ class NoOpAudioHandler extends BaseAudioHandler {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar locale español para intl (fechas)
+  await initializeDateFormatting('es', null);
+
   await dotenv.load(fileName: ".env");
 
   // --- INICIO DE LA INICIALIZACIÓN DEL AUDIO ---
@@ -73,6 +81,19 @@ Future<void> main() async {
     // Aunque si `firebase_options.dart` está bien generado,
     // la primera llamada debería bastar.
     await Firebase.initializeApp();
+  }
+
+  // Inicializa las leyendas predeterminadas si no existen
+  try {
+    final legendBackend = FirestoreLegendBackend(FirebaseFirestore.instance);
+    final legendService = LegendService(legendBackend);
+    // Usamos un ID temporal para la inicialización
+    await legendService.initializeDefaultLegends('system');
+  } catch (e) {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('Error inicializando leyendas: $e');
+    }
   }
 
   runApp(

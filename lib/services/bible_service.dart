@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:avivamiento_app/models/bible_book_model.dart';
 import 'package:avivamiento_app/models/bible_chapter_model.dart';
+import 'package:avivamiento_app/models/bible_verse_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ID de la versión de la Biblia (RVR09). Correcto.
@@ -399,11 +400,11 @@ class BibleService {
   }
 
   /// 3. Obtiene el contenido completo de un capítulo (ej: "MAT.5").
+  /// Retorna el HTML crudo para ser parseado.
   Future<String> fetchChapterContent(String chapterId) async {
-    // Usamos el endpoint /chapters/ para la lectura.
-    // Es más limpio que /passages/ para este caso de uso.
     final url =
-        '$API_BASE_URL/$BIBLE_VERSION_ID/chapters/$chapterId?content-type=text&include-verse-numbers=true';
+        '$API_BASE_URL/$BIBLE_VERSION_ID/chapters/$chapterId?content-type=html&include-verse-numbers=true';
+    print('DEBUG: Fetching content for $chapterId from $url');
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -413,14 +414,84 @@ class BibleService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         String content = data['data']['content'] as String;
-        // Limpiamos etiquetas HTML
-        content = content.replaceAll(RegExp(r'<[^>]*>|&nbsp;'), ' ').trim();
+        // NO limpiamos HTML aquí, lo necesitamos para el parseo
         return content;
       } else {
         throw Exception('Error al cargar contenido: ${response.statusCode}');
       }
     } catch (e) {
       print('Error en fetchChapterContent: $e');
+      rethrow;
+    }
+  }
+
+  /// 4. Obtiene los versículos individuales parseados de un capítulo.
+  /// Parsea el HTML del capítulo para extraer versículos usando data-number.
+  Future<List<BibleVerseModel>> fetchChapterVerses(String chapterId) async {
+    try {
+      // 1. Obtener HTML crudo
+      final htmlContent = await fetchChapterContent(chapterId);
+      final List<BibleVerseModel> verses = [];
+
+      // 2. Regex para encontrar el inicio de cada versículo
+      // La API suele devolver: <span data-number="1" class="v">1</span> Texto...
+      final verseStartRegex =
+          RegExp(r'<span[^>]*data-number="(\d+)"[^>]*>', caseSensitive: false);
+
+      final matches = verseStartRegex.allMatches(htmlContent).toList();
+
+      if (matches.isEmpty) {
+        print('DEBUG: No verse markers found in HTML');
+        return [];
+      }
+
+      for (int i = 0; i < matches.length; i++) {
+        final match = matches[i];
+        final verseNumStr = match.group(1) ?? '0';
+        final verseNumber = int.tryParse(verseNumStr) ?? 0;
+
+        // El texto del versículo comienza donde termina este match
+        final start = match.end;
+        // Y termina donde empieza el siguiente match, o al final del string
+        final end = (i < matches.length - 1)
+            ? matches[i + 1].start
+            : htmlContent.length;
+
+        if (start < end) {
+          String rawText = htmlContent.substring(start, end);
+
+          // 3. Limpiar el texto del versículo
+          // a. Remover el número del versículo que a veces se repite dentro del span (ej: >1</span>)
+          //    El regex de arriba ya consumió el tag de apertura <span...>, pero falta el contenido del span y el cierre </span>
+          //    Generalmente es: <span ...>1</span> Texto.
+          //    Así que rawText empieza con "1</span> Texto".
+
+          // Remover etiquetas HTML restantes
+          String cleanText =
+              rawText.replaceAll(RegExp(r'<[^>]*>|&nbsp;'), ' ').trim();
+
+          // A veces queda el número al principio (ej: "1 En el principio"), lo removemos si coincide
+          if (cleanText.startsWith(verseNumStr)) {
+            cleanText = cleanText.substring(verseNumStr.length).trim();
+          }
+
+          // Limpiar espacios múltiples
+          cleanText = cleanText.replaceAll(RegExp(r'\s+'), ' ');
+
+          if (verseNumber > 0 && cleanText.isNotEmpty) {
+            verses.add(BibleVerseModel(
+              id: '$chapterId.$verseNumber',
+              number: verseNumber,
+              text: cleanText,
+            ));
+          }
+        }
+      }
+
+      print('DEBUG: Parsed ${verses.length} verses from HTML');
+      return verses;
+    } catch (e) {
+      print('Error en fetchChapterVerses: $e');
       rethrow;
     }
   }

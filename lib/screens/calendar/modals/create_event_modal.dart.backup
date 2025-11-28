@@ -1,0 +1,726 @@
+// lib/screens/calendar/modals/create_event_modal.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:avivamiento_app/models/event_model.dart';
+import 'package:avivamiento_app/models/event_legend_model.dart';
+import 'package:avivamiento_app/providers/editable_legends_provider.dart';
+import 'package:avivamiento_app/providers/services_provider.dart';
+import 'package:avivamiento_app/utils/constants.dart';
+
+/// Modal para crear o editar un evento.
+class CreateEventModal extends ConsumerStatefulWidget {
+  final DateTime initialDate;
+  final EventModel? eventToEdit;
+
+  const CreateEventModal({
+    super.key,
+    required this.initialDate,
+    this.eventToEdit,
+  });
+
+  @override
+  ConsumerState<CreateEventModal> createState() => _CreateEventModalState();
+}
+
+class _CreateEventModalState extends ConsumerState<CreateEventModal> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _imageUrlController = TextEditingController();
+
+  DateTime? _startTime;
+  DateTime? _endTime;
+  EventLegend? _selectedLegend;
+  List<String> _selectedRoles = ['Todos'];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.eventToEdit != null) {
+      _initializeWithEvent(widget.eventToEdit!);
+    } else {
+      _startTime = widget.initialDate;
+      _endTime = widget.initialDate.add(const Duration(hours: 1));
+    }
+  }
+
+  void _initializeWithEvent(EventModel event) {
+    _titleController.text = event.title;
+    _descriptionController.text = event.description;
+    _locationController.text = event.location;
+    _imageUrlController.text = event.imageUrl ?? '';
+    _startTime = event.startTime.toDate();
+    _endTime = event.endTime.toDate();
+    _selectedRoles = List.from(event.targetRoles);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _locationController.dispose();
+    _imageUrlController.dispose();
+    super.dispose();
+  }
+
+  Future<DateTime?> _pickDateTime(DateTime initialDate) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (date == null) return null;
+
+    if (!mounted) return null;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initialDate),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (time == null) return null;
+
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  Future<void> _submitEvent() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_startTime == null || _endTime == null) {
+      _showError('Por favor, seleccione las fechas de inicio y fin');
+      return;
+    }
+
+    if (_selectedLegend == null) {
+      _showError('Por favor, seleccione una categoría para el evento');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final eventService = ref.read(eventServiceProvider);
+
+      if (widget.eventToEdit != null) {
+        await eventService.updateEvent(widget.eventToEdit!.id, {
+          'title': _titleController.text.trim(),
+          'description': _descriptionController.text.trim(),
+          'location': _locationController.text.trim(),
+          'startTime': Timestamp.fromDate(_startTime!),
+          'endTime': Timestamp.fromDate(_endTime!),
+          'legendName': _selectedLegend!.name,
+          'legendColor': _selectedLegend!.colorHex,
+          'targetRoles': _selectedRoles,
+          'imageUrl': _imageUrlController.text.trim().isEmpty
+              ? null
+              : _imageUrlController.text.trim(),
+        });
+      } else {
+        await eventService.createEvent(
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          location: _locationController.text.trim(),
+          startTime: Timestamp.fromDate(_startTime!),
+          endTime: Timestamp.fromDate(_endTime!),
+          legendName: _selectedLegend!.name,
+          legendColor: _selectedLegend!.colorHex,
+          targetRoles: _selectedRoles,
+          imageUrl: _imageUrlController.text.trim().isEmpty
+              ? null
+              : _imageUrlController.text.trim(),
+        );
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.eventToEdit != null
+                ? '✓ Evento actualizado con éxito'
+                : '✓ Evento creado con éxito'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('Error: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final legendsAsync = ref.watch(editableLegendsProvider);
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 8,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with gradient
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    widget.eventToEdit != null
+                        ? Icons.edit_calendar
+                        : Icons.add_circle,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.eventToEdit != null
+                          ? 'Editar Evento'
+                          : 'Crear Nuevo Evento',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            // Form content with scroll
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                        label: 'Título del Evento',
+                        hint: 'Ej: Servicio Dominical',
+                        icon: Icons.title,
+                        required: true,
+                        validator: (value) =>
+                            value!.isEmpty ? 'El título es requerido' : null,
+                      ),
+                      const SizedBox(height: 20),
+                      // Descripción
+                      _buildTextField(
+                        controller: _descriptionController,
+                        label: 'Descripción',
+                        hint: 'Describe los detalles del evento...',
+                        icon: Icons.description,
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 20),
+                      // Ubicación
+                      _buildTextField(
+                        controller: _locationController,
+                        label: 'Ubicación',
+                        hint: 'Ej: Santuario Principal',
+                        icon: Icons.location_on,
+                        required: true,
+                        validator: (value) =>
+                            value!.isEmpty ? 'La ubicación es requerida' : null,
+                      ),
+                      const SizedBox(height: 20),
+                      // URL de imagen
+                      _buildTextField(
+                        controller: _imageUrlController,
+                        label: 'URL de Imagen',
+                        hint: 'https://ejemplo.com/imagen.jpg (opcional)',
+                        icon: Icons.image,
+                      ),
+                      const SizedBox(height: 24),
+                      // Selector de categoría/leyenda (siempre disponible)
+                      _buildLegendSelector(localLegends),
+                      const SizedBox(height: 24),
+                      // Selector de roles
+                      _buildRoleSelector(),
+                      const SizedBox(height: 24),
+                      // Fechas
+                      _buildDateTimeSelector(),
+                      const SizedBox(height: 32),
+                      // Botón de guardar
+                      _buildSubmitButton(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    bool required = false,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            if (required)
+              Text(
+                ' *',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade600,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          validator: validator,
+          style: const TextStyle(fontSize: 15),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: Colors.grey.shade400,
+              fontSize: 14,
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: Theme.of(context).primaryColor,
+                width: 2,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.red.shade400),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendSelector(List<EventLegend> legends) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.category,
+                size: 20, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 8),
+            const Text(
+              'Categoría del Evento',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Text(
+              ' *',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: legends.map((legend) {
+              final isSelected = _selectedLegend?.id == legend.id;
+              return InkWell(
+                onTap: () {
+                  setState(() => _selectedLegend = legend);
+                },
+                borderRadius: BorderRadius.circular(25),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected ? legend.color : Colors.white,
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                      color: isSelected
+                          ? legend.color
+                          : legend.color.withOpacity(0.5),
+                      width: 2,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: legend.color.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.white : legend.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        legend.name,
+                        style: TextStyle(
+                          color:
+                              isSelected ? Colors.white : Colors.grey.shade800,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (isSelected) ...[
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.check_circle,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.people, size: 20, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 8),
+            const Text(
+              '¿Para quién es este evento?',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Text(
+              ' *',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: AppConstants.eventTargetRoles.map((role) {
+              final isSelected = _selectedRoles.contains(role);
+              return FilterChip(
+                label: Text(role),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (role == 'Todos') {
+                      _selectedRoles = selected ? ['Todos'] : [];
+                    } else {
+                      _selectedRoles.remove('Todos');
+                      if (selected) {
+                        _selectedRoles.add(role);
+                      } else {
+                        _selectedRoles.remove(role);
+                      }
+                      if (_selectedRoles.isEmpty) {
+                        _selectedRoles = ['Todos'];
+                      }
+                    }
+                  });
+                },
+                selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                checkmarkColor: Theme.of(context).primaryColor,
+                labelStyle: TextStyle(
+                  color: isSelected
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey.shade700,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateTimeSelector() {
+    return Column(
+      children: [
+        _buildDateTimeCard(
+          icon: Icons.event_available,
+          title: 'Inicio',
+          dateTime: _startTime,
+          onTap: () async {
+            final picked = await _pickDateTime(
+              _startTime ?? widget.initialDate,
+            );
+            if (picked != null) {
+              setState(() => _startTime = picked);
+            }
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildDateTimeCard(
+          icon: Icons.event_busy,
+          title: 'Fin',
+          dateTime: _endTime,
+          onTap: () async {
+            final picked = await _pickDateTime(
+              _endTime ?? _startTime ?? widget.initialDate,
+            );
+            if (picked != null) {
+              setState(() => _endTime = picked);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateTimeCard({
+    required IconData icon,
+    required String title,
+    required DateTime? dateTime,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: Theme.of(context).primaryColor,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    dateTime != null
+                        ? DateFormat(
+                                'EEEE, d \'de\' MMMM \'a las\' h:mm a', 'es')
+                            .format(dateTime)
+                        : 'Seleccionar fecha y hora',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: dateTime != null
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey.shade400,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _submitEvent,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          disabledBackgroundColor: Colors.grey.shade300,
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    widget.eventToEdit != null ? Icons.save : Icons.add_circle,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    widget.eventToEdit != null
+                        ? 'Actualizar Evento'
+                        : 'Crear Evento',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}

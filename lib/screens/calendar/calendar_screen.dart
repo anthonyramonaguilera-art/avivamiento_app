@@ -6,192 +6,203 @@ import 'package:intl/intl.dart';
 import 'package:avivamiento_app/models/event_model.dart';
 import 'package:avivamiento_app/providers/events_provider.dart';
 import 'package:avivamiento_app/providers/user_data_provider.dart';
-import 'package:avivamiento_app/providers/services_provider.dart';
-import 'package:avivamiento_app/screens/calendar/create_event_screen.dart';
-import 'package:avivamiento_app/screens/calendar/edit_event_screen.dart';
+import 'package:avivamiento_app/providers/editable_legends_provider.dart';
 import 'package:avivamiento_app/utils/constants.dart';
+import 'package:avivamiento_app/screens/calendar/widgets/calendar_grid_widget.dart';
+import 'package:avivamiento_app/screens/calendar/widgets/legend_chips_widget.dart';
+import 'package:avivamiento_app/screens/calendar/modals/event_details_modal.dart';
+import 'package:avivamiento_app/screens/calendar/modals/create_event_modal.dart';
 
-enum EventStatus { upcoming, ongoing, finished }
-
-class CalendarScreen extends ConsumerWidget {
+/// Pantalla principal del calendario con vista mensual.
+class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
-  EventStatus _getEventStatus(EventModel event) {
-    final now = DateTime.now();
-    final startTime = event.startTime.toDate();
-    final endTime = event.endTime.toDate();
+  @override
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
+}
 
-    if (now.isAfter(endTime)) {
-      return EventStatus.finished;
-    } else if (now.isAfter(startTime) && now.isBefore(endTime)) {
-      return EventStatus.ongoing;
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  late DateTime _displayMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayMonth = DateTime.now();
+    // Inicializar leyendas predeterminadas si no existen
+    Future.microtask(() => ref.read(initializeLegendsProvider));
+  }
+
+  void _changeMonth(int delta) {
+    setState(() {
+      _displayMonth = DateTime(
+        _displayMonth.year,
+        _displayMonth.month + delta,
+        1,
+      );
+    });
+  }
+
+  void _onDayTap(DateTime day, List<EventModel> dayEvents) {
+    final userProfile = ref.read(userProfileProvider).value;
+
+    if (dayEvents.isEmpty) {
+      // Si no hay eventos y el usuario puede crear eventos
+      if (userProfile != null &&
+          [
+            AppConstants.rolePastor,
+            AppConstants.roleAdmin,
+            AppConstants.roleLider,
+          ].contains(userProfile.rol)) {
+        _showCreateEventModal(day);
+      }
     } else {
-      return EventStatus.upcoming;
+      // Siempre mostrar detalles si hay eventos (permite crear más eventos)
+      _showEventDetailsModal(day, dayEvents);
     }
+  }
+
+  void _showEventDetailsModal(DateTime day, List<EventModel> events) {
+    showDialog(
+      context: context,
+      builder: (context) => EventDetailsModal(
+        date: day,
+        events: events,
+      ),
+    );
+  }
+
+  void _showCreateEventModal(DateTime day) {
+    showDialog(
+      context: context,
+      builder: (context) => CreateEventModal(
+        initialDate: day,
+      ),
+    );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final eventsAsyncValue = ref.watch(eventsProvider);
+    final legendsAsyncValue = ref.watch(editableLegendsProvider);
     final userProfile = ref.watch(userProfileProvider).value;
 
-    final bool canManageEvents = userProfile != null &&
-        [
-          AppConstants.rolePastor,
-          AppConstants.roleAdmin,
-          AppConstants.roleLider
-        ].contains(userProfile.rol);
-
     return Scaffold(
-      body: eventsAsyncValue.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
-        data: (events) {
-          if (events.isEmpty) {
-            return const Center(child: Text('No hay eventos programados.'));
-          }
-          return ListView.builder(
-            itemCount: events.length,
-            itemBuilder: (context, index) {
-              final event = events[index];
-              final status = _getEventStatus(event);
-
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                // [CAMBIO] La opacidad se aplica a toda la tarjeta si ha finalizado.
-                child: Opacity(
-                  opacity: status == EventStatus.finished ? 0.6 : 1.0,
-                  child: ListTile(
-                    leading:
-                        _buildStatusIndicator(status), // Indicador de estado
-                    title: Text(
-                      event.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+      backgroundColor: Colors.grey.shade50,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Calendario de actividades en',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Centro Internacional\nAvivamiento Venezuela',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  // Navegación de mes
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: () => _changeMonth(-1),
                       ),
-                    ),
-                    subtitle: Text(
-                      '${DateFormat.yMd().add_jm().format(event.startTime.toDate())}\n${event.location}',
-                    ),
-                    isThreeLine: true,
-                    trailing: canManageEvents
-                        ? _buildAdminMenu(context, ref, event)
-                        : null,
+                      Text(
+                        DateFormat('MMMM yyyy', 'es').format(_displayMonth),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: () => _changeMonth(1),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Leyendas locales
+            legendsAsyncValue.when(
+              data: (legends) => LegendChipsWidget(legends: legends),
+              loading: () => const SizedBox(height: 50),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+            // Calendario
+            Expanded(
+              child: eventsAsyncValue.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          size: 48, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text('Error: $error'),
+                    ],
                   ),
                 ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: canManageEvents
-          ? FloatingActionButton(
-              heroTag: 'add_event_fab',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CreateEventScreen()),
+                data: (allEvents) {
+                  // Filtrar eventos por rol del usuario
+                  final visibleEvents = userProfile != null
+                      ? allEvents
+                          .where((event) =>
+                              event.isVisibleForRole(userProfile.rol))
+                          .toList()
+                      : allEvents
+                          .where((event) => event.targetRoles.contains('Todos'))
+                          .toList();
+
+                  // Filtrar eventos del mes actual
+                  final monthEvents = visibleEvents.where((event) {
+                    final eventDate = event.eventDate;
+                    return eventDate.year == _displayMonth.year &&
+                        eventDate.month == _displayMonth.month;
+                  }).toList();
+
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: CalendarGridWidget(
+                      displayMonth: _displayMonth,
+                      events: monthEvents,
+                      onDayTap: _onDayTap,
+                    ),
+                  );
+                },
               ),
-              child: const Icon(Icons.add),
-            )
-          : null,
-    );
-  }
-
-  // [NUEVO] Widget para el indicador visual con ícono y texto.
-  Widget _buildStatusIndicator(EventStatus status) {
-    IconData icon;
-    Color color;
-    String text;
-
-    switch (status) {
-      case EventStatus.ongoing:
-        icon = Icons.sync_alt;
-        color = Colors.green.shade700;
-        text = 'En Proceso';
-        break;
-      case EventStatus.upcoming:
-        icon = Icons.update;
-        color = Colors.blue.shade700;
-        text = 'Próximo';
-        break;
-      case EventStatus.finished:
-        icon = Icons.check_circle_outline;
-        color = Colors.grey.shade600;
-        text = 'Finalizado';
-        break;
-    }
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
-        Text(text, style: TextStyle(color: color, fontSize: 10)),
-      ],
-    );
-  }
-
-  // El resto de los métodos (_buildAdminMenu y _showDeleteConfirmation) no cambian.
-  // ... (pegar aquí los métodos _buildAdminMenu y _showDeleteConfirmation de la respuesta anterior)
-  Widget _buildAdminMenu(
-      BuildContext context, WidgetRef ref, EventModel event) {
-    return PopupMenuButton<String>(
-      onSelected: (value) {
-        if (value == 'edit') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => EditEventScreen(event: event)),
-          );
-        } else if (value == 'delete') {
-          _showDeleteConfirmation(context, ref, event);
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'edit',
-          child: ListTile(leading: Icon(Icons.edit), title: Text('Editar')),
+            ),
+          ],
         ),
-        const PopupMenuItem(
-          value: 'delete',
-          child: ListTile(
-              leading: Icon(Icons.delete, color: Colors.red),
-              title: Text('Eliminar', style: TextStyle(color: Colors.red))),
-        ),
-      ],
-    );
-  }
-
-  void _showDeleteConfirmation(
-      BuildContext context, WidgetRef ref, EventModel event) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Eliminación'),
-        content: Text(
-            '¿Estás seguro de que quieres eliminar el evento "${event.title}"?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancelar'),
-            onPressed: () => Navigator.of(ctx).pop(),
-          ),
-          TextButton(
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              try {
-                await ref.read(eventServiceProvider).deleteEvent(event.id);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Evento eliminado con éxito')),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error al eliminar: $e')),
-                );
-              }
-            },
-          ),
-        ],
       ),
+      // FAB removido - ahora solo se crea evento pulsando el día
     );
   }
 }
