@@ -1,8 +1,6 @@
 // lib/providers/bible_navigation_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:avivamiento_app/models/bible_book_model.dart';
-import 'package:avivamiento_app/models/bible_chapter_model.dart';
 import 'package:avivamiento_app/providers/services_provider.dart';
 
 /// Estado de navegación del lector bíblico

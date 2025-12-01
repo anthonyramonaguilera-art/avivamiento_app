@@ -117,7 +117,7 @@ class _LivestreamsScreenState extends ConsumerState<LivestreamsScreen>
                       fontWeight: FontWeight.w500,
                     ),
                     splashFactory: NoSplash.splashFactory,
-                    overlayColor: MaterialStateProperty.all(Colors.transparent),
+                    overlayColor: WidgetStateProperty.all(Colors.transparent),
                     tabs: const [
                       Tab(
                         text: 'PREDICAS',
@@ -626,13 +626,13 @@ class _LivestreamsScreenState extends ConsumerState<LivestreamsScreen>
       return 'Hace ${difference.inDays} días';
     } else if (difference.inDays < 30) {
       final weeks = (difference.inDays / 7).floor();
-      return 'Hace ${weeks} ${weeks == 1 ? 'semana' : 'semanas'}';
+      return 'Hace $weeks ${weeks == 1 ? 'semana' : 'semanas'}';
     } else if (difference.inDays < 365) {
       final months = (difference.inDays / 30).floor();
-      return 'Hace ${months} ${months == 1 ? 'mes' : 'meses'}';
+      return 'Hace $months ${months == 1 ? 'mes' : 'meses'}';
     } else {
       final years = (difference.inDays / 365).floor();
-      return 'Hace ${years} ${years == 1 ? 'año' : 'años'}';
+      return 'Hace $years ${years == 1 ? 'año' : 'años'}';
     }
   }
 }
