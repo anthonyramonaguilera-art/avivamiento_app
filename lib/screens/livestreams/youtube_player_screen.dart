@@ -49,6 +49,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
         enableCaption: true,
         enableJavaScript: true, // CRÍTICO para que funcione el iframe
         playsInline: true,
+        origin: 'https://www.youtube-nocookie.com',
       ),
     );
 
