@@ -2,21 +2,24 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.avivamiento_app">
 
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-
+    <!-- PERMISOS DE RED Y SISTEMA -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    
+    <!-- PERMISOS MULTIMEDIA (CRÍTICOS PARA WEBVIEW) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/> 
 
     <application
-    
         android:label="Avivamiento App"
+        android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:hardwareAccelerated="true"
+        android:usesCleartextTraffic="true"
         tools:replace="android:label">
 
         <activity
@@ -38,6 +41,7 @@
             </intent-filter>
         </activity>
 
+        <!-- SERVICIO DE AUDIO (BACKGROUND PLAY) -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"
             android:exported="true"
@@ -57,15 +61,25 @@
             </intent-filter>
         </receiver>
 
+        <!-- CONFIGURACIÓN DE FLUTTER -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+            
+        <!-- 🔴🔴🔴 ESTA ES LA SOLUCIÓN AL CRASH EN LG G7 🔴🔴🔴 -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
     </application>
 
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
         </intent>
     </queries>
 </manifest>
