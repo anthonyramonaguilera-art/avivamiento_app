@@ -7,6 +7,7 @@ import 'package:avivamiento_app/services/bible_service.dart';
 import 'package:avivamiento_app/services/auth_service.dart';
 import 'package:avivamiento_app/services/user_service.dart';
 import 'package:avivamiento_app/services/post_service.dart';
+import 'package:avivamiento_app/services/comment_service.dart';
 import 'package:avivamiento_app/services/event_service.dart';
 import 'package:avivamiento_app/services/chat_service.dart';
 import 'package:avivamiento_app/services/notification_service.dart';
@@ -47,6 +48,10 @@ final userServiceProvider = Provider<UserService>((ref) {
 
 final postServiceProvider = Provider<PostService>((ref) {
   return PostService();
+});
+
+final commentServiceProvider = Provider<CommentService>((ref) {
+  return CommentService();
 });
 
 final eventServiceProvider = Provider<EventService>((ref) {

@@ -16,11 +16,18 @@ class PostModel {
   final String? videoUrl;
   final String? videoProvider;
 
+  // Campos de audio
+  final String? audioUrl;
+
   // [CAMBIO] Usamos DateTime nativo en lugar de Timestamp de Firebase
   final DateTime timestamp;
 
   final int likes;
   final List<String> likedBy;
+
+  // Campos para características sociales
+  final int commentCount;
+  final int shareCount;
 
   PostModel({
     required this.id,
@@ -32,9 +39,12 @@ class PostModel {
     this.imageUrl,
     this.videoUrl,
     this.videoProvider,
+    this.audioUrl,
     required this.timestamp,
     this.likes = 0,
     this.likedBy = const [],
+    this.commentCount = 0,
+    this.shareCount = 0,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> data) {
@@ -69,10 +79,13 @@ class PostModel {
               'imageKey'], // A veces lo guardamos como imageKey, mapeamos ambos
       videoUrl: data['videoUrl'],
       videoProvider: data['videoProvider'],
+      audioUrl: data['audioUrl'] ?? data['audioKey'],
       // [CAMBIO] Parseamos el string ISO a DateTime
       timestamp: parseDate(data['createdAt'] ?? data['timestamp']),
       likes: (data['likes'] is int) ? data['likes'] : 0,
       likedBy: List<String>.from(data['likedBy'] ?? []),
+      commentCount: (data['commentCount'] is int) ? data['commentCount'] : 0,
+      shareCount: (data['shareCount'] is int) ? data['shareCount'] : 0,
     );
   }
 }

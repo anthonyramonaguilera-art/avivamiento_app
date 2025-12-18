@@ -23,8 +23,8 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
   late YoutubePlayerController _controller;
 
   // ESTADOS
-  bool _isPlayerReady = false; // Para mostrar/ocultar el spinner
-  bool _showControls = true; // Para mostrar/ocultar el overlay
+  bool _isPlayerReady = false; // Controla el spinner de carga
+  bool _showControls = true; // Controla la visibilidad de la UI
   Timer? _controlsTimer;
 
   @override
@@ -32,13 +32,10 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
     super.initState();
     // Ocultar barras del sistema para experiencia inmersiva
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
     _initializePlayer();
   }
 
   void _initializePlayer() {
-    // 1. CONFIGURACIÓN DEL CONTROLADOR
-    // inicializamos con params básicos. IMPORTANTE: strictRelatedVideos ayuda en Android.
     _controller = YoutubePlayerController(
       params: const YoutubePlayerParams(
         showControls: true,
@@ -47,28 +44,20 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
         loop: false,
         strictRelatedVideos: true,
         enableCaption: true,
-        enableJavaScript: true, // CRÍTICO para que funcione el iframe
+        enableJavaScript: true,
         playsInline: true,
+        // LA SOLUCIÓN CLAVE: Política de origen para evitar bloqueos
         origin: 'https://www.youtube-nocookie.com',
       ),
     );
 
-    // 2. CARGA DIFERIDA (LAZY LOAD)
-    // Esperamos 500ms para asegurar que la vista está montada antes de cargar el ID.
-    // Esto evita el error de "setSize undefined" en dispositivos lentos.
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        _controller.loadVideoById(videoId: widget.videoId);
-      }
-    });
+    // Carga inicial del video
+    _controller.loadVideoById(videoId: widget.videoId);
 
-    // 3. ESCUCHA DE ESTADOS (STATE LISTENER)
-    // En lugar de onReady (que no existe en tu versión), escuchamos cambios.
+    // Escuchar cambios de estado para quitar el spinner
     _controller.listen((event) {
       if (!mounted) return;
 
-      // Si el video está "cued" (listo), "buffering" (cargando datos) o "playing"
-      // consideramos que el reproductor ya cargó visualmente.
       if (!_isPlayerReady &&
           (event.playerState == PlayerState.cued ||
               event.playerState == PlayerState.buffering ||
@@ -79,34 +68,39 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       }
     });
 
-    // 4. FAILSAFE (SEGURIDAD)
-    // Si por alguna razón el listener falla (internet lento), a los 4s forzamos mostrar el video.
-    Future.delayed(const Duration(seconds: 4), () {
-      if (mounted && !_isPlayerReady) {
-        setState(() => _isPlayerReady = true);
-      }
-    });
-
-    _resetControlsTimer();
+    // Iniciar temporizador para ocultar controles automáticamente
+    _startControlsTimer();
   }
 
   void _toggleControls() {
-    setState(() => _showControls = !_showControls);
-    if (_showControls) _resetControlsTimer();
+    setState(() {
+      _showControls = !_showControls;
+    });
+
+    if (_showControls) {
+      _startControlsTimer();
+    } else {
+      _controlsTimer?.cancel();
+    }
   }
 
-  void _resetControlsTimer() {
+  void _startControlsTimer() {
     _controlsTimer?.cancel();
     _controlsTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted && _showControls) setState(() => _showControls = false);
+      if (mounted && _showControls) {
+        setState(() {
+          _showControls = false;
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     _controlsTimer?.cancel();
-    // Devolvemos la UI del sistema a la normalidad
+    // Restaurar UI del sistema
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Cierre limpio del controlador
     try {
       _controller.close();
     } catch (_) {}
@@ -115,7 +109,6 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Usamos MediaQuery para saber el tamaño real de la pantalla
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -123,11 +116,10 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // CAPA 1: EL REPRODUCTOR
+          // CAPA 1: VIDEO
           Center(
             child: SizedBox(
               width: size.width,
-              // Ajustamos la altura según si es Short o Video normal
               height: widget.isShort ? size.height : size.width * (9 / 16),
               child: YoutubePlayer(
                 controller: _controller,
@@ -137,17 +129,16 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
             ),
           ),
 
-          // CAPA 2: OVERLAY DE CONTROLES (Solo Widgets nativos)
+          // CAPA 2: CONTROLES (OVERLAY)
           GestureDetector(
             onTap: _toggleControls,
-            behavior: HitTestBehavior
-                .translucent, // Permite tocar a través de áreas vacías
+            behavior: HitTestBehavior.translucent,
             child: AnimatedOpacity(
               opacity: _showControls ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 300),
               child: Stack(
                 children: [
-                  // SOMBRA SUPERIOR (GRADIENTE)
+                  // Gradiente Superior
                   Positioned(
                     top: 0,
                     left: 0,
@@ -167,9 +158,9 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                     ),
                   ),
 
-                  // BOTÓN ATRÁS
+                  // Botón Atrás
                   Positioned(
-                    top: 40, // Margen seguro superior
+                    top: 40,
                     left: 20,
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new,
@@ -178,7 +169,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                     ),
                   ),
 
-                  // SOMBRA INFERIOR (GRADIENTE)
+                  // Gradiente Inferior
                   Positioned(
                     bottom: 0,
                     left: 0,
@@ -198,7 +189,7 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                     ),
                   ),
 
-                  // INFORMACIÓN DEL VIDEO
+                  // Info del Video
                   Positioned(
                     bottom: 40,
                     left: 20,
@@ -224,7 +215,6 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        // Badge / Etiqueta simple
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
@@ -249,24 +239,14 @@ class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
             ),
           ),
 
-          // CAPA 3: INDICADOR DE CARGA (Con fondo negro para tapar la carga fea)
+          // CAPA 3: LOADING
           if (!_isPlayerReady)
             Container(
               color: Colors.black,
               child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      "Cargando...",
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
-                    ),
-                  ],
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
                 ),
               ),
             ),

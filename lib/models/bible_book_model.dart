@@ -10,11 +10,12 @@ class BibleBookModel {
     required this.testament,
   });
 
-  factory BibleBookModel.fromMap(Map<String, dynamic> data) {
+  factory BibleBookModel.fromMap(Map<String, dynamic> data,
+      {String? testament}) {
     return BibleBookModel(
       id: data['id'] ?? 'Sin ID',
       name: data['name'] ?? 'Desconocido',
-      testament: data['testament'] ?? 'OT',
+      testament: testament ?? data['testament'] ?? 'OT',
     );
   }
 }

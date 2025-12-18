@@ -20,7 +20,7 @@ class HomeScreen extends ConsumerWidget {
     FeedScreen(),
     CalendarScreen(),
     LivestreamsScreen(),
-    ConferencesScreen(),
+    BibleHubScreen(),
     RadioScreen(),
   ];
 
@@ -36,7 +36,8 @@ class HomeScreen extends ConsumerWidget {
         // Por ahora las mantenemos pero con el estilo del tema
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_outline_rounded), // Iconos redondeados
+            icon:
+                const Icon(Icons.person_outline_rounded), // Iconos redondeados
             tooltip: 'Perfil',
             onPressed: () {
               Navigator.of(context).push(
@@ -55,11 +56,12 @@ class HomeScreen extends ConsumerWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.menu_book_rounded),
-            tooltip: 'La Biblia',
+            icon: const Icon(Icons.groups_outlined),
+            tooltip: 'Reuniones',
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const BibleHubScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const ConferencesScreen()),
               );
             },
           ),
@@ -89,9 +91,9 @@ class HomeScreen extends ConsumerWidget {
             label: 'Videos',
           ),
           NavigationDestination(
-            icon: Icon(Icons.groups_outlined),
-            selectedIcon: Icon(Icons.groups_rounded),
-            label: 'Reuniones',
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book_rounded),
+            label: 'Biblia',
           ),
           NavigationDestination(
             icon: Icon(Icons.radio_outlined),

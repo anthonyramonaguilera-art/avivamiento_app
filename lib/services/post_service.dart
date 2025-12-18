@@ -20,11 +20,15 @@ class PostService {
     String? authorPhotoUrl,
     required String authorRole,
     XFile? imageFile,
+    XFile? videoFile,
+    XFile? audioFile,
   }) async {
     String? imageKey;
+    String? videoKey;
+    String? audioKey;
 
     try {
-      // 1. Subir a S3 (si hay foto)
+      // 1. Subir imagen (si hay)
       if (imageFile != null) {
         print('📸 Iniciando subida de imagen a S3...');
         final file = File(imageFile.path);
@@ -36,14 +40,40 @@ class PostService {
         print('✅ Imagen subida. Key: $imageKey');
       }
 
-      // 2. Enviar metadatos a Lambda
+      // 2. Subir video (si hay)
+      if (videoFile != null) {
+        print('🎬 Iniciando subida de video a S3...');
+        final file = File(videoFile.path);
+        videoKey = await _uploadService.uploadVideoToS3(file);
+
+        if (videoKey == null) {
+          throw Exception('Falló la subida del video a S3');
+        }
+        print('✅ Video subido. Key: $videoKey');
+      }
+
+      // 3. Subir audio (si hay)
+      if (audioFile != null) {
+        print('🎵 Iniciando subida de audio a S3...');
+        final file = File(audioFile.path);
+        audioKey = await _uploadService.uploadAudioToS3(file);
+
+        if (audioKey == null) {
+          throw Exception('Falló la subida del audio a S3');
+        }
+        print('✅ Audio subido. Key: $audioKey');
+      }
+
+      // 4. Enviar metadatos a Lambda
       final url = Uri.parse('$_apiBaseUrl/create-post');
 
       final body = {
         "userId": authorId,
         "authorName": authorName,
         "content": content,
-        "imageKey": imageKey,
+        if (imageKey != null) "imageKey": imageKey,
+        if (videoKey != null) "videoKey": videoKey,
+        if (audioKey != null) "audioKey": audioKey,
         "authorRole": authorRole,
         "authorPhotoUrl": authorPhotoUrl,
       };
@@ -67,41 +97,126 @@ class PostService {
     }
   }
 
-  Stream<List<PostModel>> getPostsStream() async* {
+  /// Obtener posts con paginación para infinite scroll
+  Future<List<PostModel>> getPosts({
+    String? lastPostId,
+    int limit = 10,
+  }) async {
     try {
-      final url = Uri.parse('$_apiBaseUrl/feed');
+      final queryParams = {
+        'limit': limit.toString(),
+        if (lastPostId != null) 'lastPostId': lastPostId,
+      };
+
+      final url =
+          Uri.parse('$_apiBaseUrl/feed').replace(queryParameters: queryParams);
+
       print('📥 Solicitando feed a: $url');
 
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // La Lambda devuelve: { "message": "...", "posts": [...] }
         final List<dynamic> postsJson = data['posts'] ?? [];
 
         print('✅ Feed recibido: ${postsJson.length} posts');
 
-        // Convertimos cada JSON en un objeto PostModel
         final List<PostModel> posts =
             postsJson.map((json) => PostModel.fromJson(json)).toList();
 
-        // "Emitimos" la lista de posts para que el StreamBuilder la reciba
-        yield posts;
+        return posts;
       } else {
         print('❌ Error al obtener feed: ${response.statusCode}');
-        yield []; // Emitimos lista vacía en caso de error para no colgar la app
+        return [];
       }
     } catch (e) {
-      print('❌ Excepción en getPostsStream: $e');
-      yield [];
+      print('❌ Excepción en getPosts: $e');
+      return [];
     }
   }
 
-  Future<void> deletePost(String postId) async {
-    print("Borrar post no implementado aún en AWS");
+  /// Compartir una publicación (incrementa el contador)
+  Future<void> sharePost(String postId, String userId) async {
+    try {
+      final url = Uri.parse('$_apiBaseUrl/share-post');
+
+      final body = {
+        "postId": postId,
+        "userId": userId,
+      };
+
+      print('🔗 Compartiendo post: $postId');
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Error al compartir: ${response.body}');
+      }
+
+      print('✅ Post compartido exitosamente');
+    } catch (e) {
+      print('❌ Error en sharePost: $e');
+      rethrow;
+    }
   }
 
+  /// Eliminar una publicación
+  Future<void> deletePost(String postId) async {
+    try {
+      final url = Uri.parse('$_apiBaseUrl/delete-post');
+
+      final body = {"postId": postId};
+
+      print('🗑️ Eliminando post: $postId');
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Error al eliminar: ${response.body}');
+      }
+
+      print('✅ Post eliminado exitosamente');
+    } catch (e) {
+      print('❌ Error en deletePost: $e');
+      rethrow;
+    }
+  }
+
+  /// Toggle like en una publicación
   Future<void> toggleLike(String postId, String userId, bool isLiked) async {
-    print("Likes no implementados aún en AWS");
+    try {
+      final url = Uri.parse('$_apiBaseUrl/post-like');
+
+      final body = {
+        "postId": postId,
+        "userId": userId,
+        "action": isLiked ? "unlike" : "like",
+      };
+
+      print('💙 Toggle like: $postId');
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Error al dar like: ${response.body}');
+      }
+
+      print('✅ Like actualizado');
+    } catch (e) {
+      print('❌ Error en toggleLike: $e');
+      rethrow;
+    }
   }
 }

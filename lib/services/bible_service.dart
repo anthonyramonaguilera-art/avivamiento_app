@@ -363,7 +363,14 @@ class BibleService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> booksList = data['data'];
-        return booksList.map((book) => BibleBookModel.fromMap(book)).toList();
+        // La API no devuelve el campo 'testament', por lo que lo asignamos
+        // basándonos en el índice: los primeros 39 libros son AT, los 27 restantes son NT
+        return booksList.asMap().entries.map((entry) {
+          final index = entry.key;
+          final book = entry.value;
+          final testament = index < 39 ? 'OT' : 'NT';
+          return BibleBookModel.fromMap(book, testament: testament);
+        }).toList();
       } else {
         throw Exception('Error al cargar libros: ${response.statusCode}');
       }
